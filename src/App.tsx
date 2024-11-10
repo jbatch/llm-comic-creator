@@ -5,6 +5,7 @@ import PromptPage from "./components/PromptPage";
 import PanelsPage from "./components/panels/PanelPage";
 import ApiKeyPage from "./components/ApiKeyPage";
 import ComicLayout from "./components/comic/ComicLayout";
+import ComicLayoutV2 from "./components/comic/ComicLayoutV2";
 import LayoutGeneratorPage from "./components/layout-generator/LayoutGeneratorPage";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/panels" element={<PanelsPage />} />
           <Route path="/settings" element={<ApiKeyPage />} />
           <Route path="/comic" element={<ComicLayout />} />
+          <Route path="/comic2" element={<ComicLayoutV2 />} />
           <Route path="/layout" element={<LayoutGeneratorPage />} />
         </Route>
       </Routes>

@@ -5,15 +5,11 @@ import {
   SystemPrompt,
 } from "../config/prompts";
 import { openAICache } from "./cache";
-
 export interface ComicPanel {
   imagePrompt: string;
-  imageUrl?: string; // Add URL for generated image
-  isGenerating?: boolean; // Track generation status
-}
-
-export interface ComicPanelsResponse {
-  panels: ComicPanel[];
+  imageUrl?: string;
+  imageBase64?: string; // Add base64 support
+  isGenerating?: boolean;
 }
 
 export class OpenAIService {
@@ -26,7 +22,7 @@ export class OpenAIService {
     });
   }
 
-  async generateImage(prompt: string, skipCache = false): Promise<string> {
+  async generateImage(prompt: string, skipCache = false): Promise<ComicPanel> {
     if (!this.client) {
       throw new Error("OpenAI client not initialized");
     }
@@ -35,7 +31,7 @@ export class OpenAIService {
     if (!skipCache) {
       const cachedImageUrl = openAICache.getImage(prompt);
       if (cachedImageUrl) {
-        return cachedImageUrl;
+        return { imagePrompt: prompt, imageUrl: cachedImageUrl };
       }
     }
 
@@ -47,19 +43,27 @@ export class OpenAIService {
         size: "1024x1024",
         quality: "standard",
         style: "vivid",
+        response_format: "b64_json", // Request base64 instead of URL
       });
 
-      const imageUrl = response.data[0]?.url;
-      if (!imageUrl) {
-        throw new Error("No image URL returned from OpenAI");
+      const imageBase64 = response.data[0]?.b64_json;
+      if (!imageBase64) {
+        throw new Error("No image data returned from OpenAI");
       }
+
+      // Create a displayable URL for the UI
+      const imageUrl = `data:image/png;base64,${imageBase64}`;
 
       // Cache the response (only in dev mode)
       if (!skipCache) {
         openAICache.setImage(prompt, imageUrl);
       }
 
-      return imageUrl;
+      return {
+        imagePrompt: prompt,
+        imageUrl,
+        imageBase64,
+      };
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Failed to generate image: ${error.message}`);
@@ -148,7 +152,7 @@ export class OpenAIService {
   async generateComicPanels(
     storyContent: string,
     skipCache = false
-  ): Promise<ComicPanelsResponse> {
+  ): Promise<{ panels: ComicPanel[] }> {
     const response = await this.generateWithPrompt(
       storyContent,
       getGenerateComicPanelsSystemPrompt(),
@@ -160,7 +164,7 @@ export class OpenAIService {
     );
 
     try {
-      const parsedResponse = JSON.parse(response) as ComicPanelsResponse;
+      const parsedResponse = JSON.parse(response) as { panels: ComicPanel[] };
       return parsedResponse;
     } catch {
       throw new Error("Failed to parse comic panel response from OpenAI");

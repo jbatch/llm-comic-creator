@@ -84,7 +84,7 @@ const PanelPage: React.FC = () => {
     });
 
     try {
-      const imageUrl = await openai.generateImage(
+      const { imageUrl, imageBase64 } = await openai.generateImage(
         panels[panelIndex].imagePrompt
       );
 
@@ -93,7 +93,7 @@ const PanelPage: React.FC = () => {
         console.log("Setting image URL for panel", panelIndex);
         return prevPanels.map((panel, idx) =>
           idx === panelIndex
-            ? { ...panel, imageUrl, isGenerating: false }
+            ? { ...panel, imageUrl, imageBase64, isGenerating: false }
             : panel
         );
       });
@@ -172,7 +172,7 @@ const PanelPage: React.FC = () => {
 
           {allPanelsHaveImages() && (
             <Button asChild className="gap-2">
-              <Link to="/comic" state={{ panels }}>
+              <Link to="/comic2" state={{ panels }}>
                 <BookOpen className="h-4 w-4" />
                 Generate Comic
               </Link>
