@@ -2,10 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useLocation, Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, LoaderCircle, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  LoaderCircle,
+  Plus,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportToPDF } from "@/utils/pdfExport";
 import { toast } from "@/hooks/use-toast";
+import ComicPreview from "./ComicPreview";
 
 interface Panel {
   x: number;
@@ -100,49 +107,6 @@ const LayoutPreview: React.FC<LayoutPreviewProps> = ({
   </button>
 );
 
-const ComicPage: React.FC<{
-  layout: LayoutTemplate;
-  panels: ComicPanel[];
-  startIndex: number;
-  pageIndex: number;
-}> = ({ layout, panels, startIndex, pageIndex }) => (
-  <div
-    className="relative w-full aspect-[1.4142] bg-white shadow-lg"
-    data-page-index={pageIndex}
-  >
-    {layout.panels.map((panel, index) => {
-      const imageIndex = startIndex + index;
-      const image = panels[imageIndex];
-
-      return (
-        <div
-          key={index}
-          className="absolute"
-          style={{
-            left: `${panel.x}%`,
-            top: `${panel.y}%`,
-            width: `${panel.width}%`,
-            height: `${panel.height}%`,
-            padding: "4px",
-          }}
-        >
-          {image?.imageUrl ? (
-            <img
-              src={image.imageUrl}
-              alt={`Panel ${imageIndex + 1}`}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-              No image
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </div>
-);
-
 const PageThumbnail: React.FC<{
   layout: LayoutTemplate;
   panels: ComicPanel[];
@@ -207,6 +171,9 @@ const ComicLayoutV2: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<PageData[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [orientation, setOrientation] = useState<"portrait" | "landscape">(
+    "portrait"
+  );
 
   useEffect(() => {
     // Initialize with first page if none exist
@@ -270,7 +237,7 @@ const ComicLayoutV2: React.FC = () => {
     setIsExporting(true);
     try {
       console.log("Starting export with panels:", panels);
-      await exportToPDF(pages, panels, "My Comic");
+      await exportToPDF(pages, panels, { title: "My Comic", orientation });
       toast({
         title: "Export Successful",
         description: "Your comic has been exported to PDF.",
@@ -373,16 +340,29 @@ const ComicLayoutV2: React.FC = () => {
 
           {/* Comic Preview */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Preview</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setOrientation((prev) =>
+                    prev === "portrait" ? "landscape" : "portrait"
+                  )
+                }
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                {orientation === "portrait" ? "Portrait" : "Landscape"}
+              </Button>
             </CardHeader>
             <CardContent>
               {pages[currentPage] && (
-                <ComicPage
+                <ComicPreview
                   layout={pages[currentPage].layout}
                   panels={panels}
                   startIndex={pages[currentPage].startIndex}
                   pageIndex={currentPage}
+                  orientation={orientation}
                 />
               )}
             </CardContent>
