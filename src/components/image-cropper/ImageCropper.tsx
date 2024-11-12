@@ -5,7 +5,6 @@ import { CropState } from "./types";
 import { useCropDimensions } from "./hooks/useCropDimensions";
 import { useImageLoader } from "./hooks/useImageLoader";
 import { useDragging } from "./hooks/useDragging";
-import { StyleCalculator } from "./utils/styleCalculator";
 import { DragHandle } from "./components/DragHandle";
 import { LoadingOverlay } from "./components/LoadingOverlay";
 
@@ -24,26 +23,33 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cropAreaRef = useRef<HTMLDivElement>(null);
+  console.log(`Open imagecropper with aspectRatio: ${aspectRatio}`);
 
-  const dimensions = useCropDimensions(containerRef);
-  const { isLoading, imageSize, moveDirection } = useImageLoader(
-    imageUrl,
-    aspectRatio
-  );
+  const dimensions = useCropDimensions(containerRef, aspectRatio);
+  console.log("calculated dimensions", { dimensions });
+  const { isLoading, moveDirection } = useImageLoader(imageUrl, aspectRatio);
   const { position, isDragging, startDragging, setPosition } = useDragging(
     moveDirection,
     initialState?.position || { x: 0.5, y: 0.5 },
     cropAreaRef
   );
 
-  const { imageStyle, cropWindowStyle } = StyleCalculator.calculateStyles(
-    imageSize,
-    dimensions,
-    position,
-    aspectRatio,
-    moveDirection,
-    isDragging
-  );
+  const previewStyle: React.CSSProperties = {
+    width: dimensions.width,
+    height: dimensions.height,
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "black",
+  };
+
+  const imageStyle: React.CSSProperties = {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    objectPosition: `${position.x * 100}% ${position.y * 100}%`,
+    transition: isDragging ? "none" : "object-position 0.2s",
+  };
 
   return (
     <div
@@ -51,35 +57,24 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
       ref={containerRef}
     >
       <div className="absolute inset-6 flex items-center justify-center">
-        <div
-          ref={cropAreaRef}
-          className="relative overflow-hidden bg-black rounded-sm"
-          style={{
-            width: dimensions.width,
-            height: dimensions.height,
-          }}
-        >
-          {isLoading ? (
-            <LoadingOverlay />
-          ) : (
-            <>
-              <img
-                src={imageUrl}
-                alt="Crop preview"
-                className="pointer-events-none"
-                style={imageStyle}
-              />
-
-              <div
-                className="border-2 border-white"
-                style={cropWindowStyle}
-                onMouseDown={startDragging}
-              >
-                <DragHandle moveDirection={moveDirection} />
-              </div>
-            </>
-          )}
-        </div>
+        {isLoading ? (
+          <LoadingOverlay />
+        ) : (
+          <div
+            ref={cropAreaRef}
+            style={previewStyle}
+            className="rounded-sm shadow-lg"
+            onMouseDown={startDragging}
+          >
+            <img
+              src={imageUrl}
+              alt="Crop preview"
+              style={imageStyle}
+              draggable={false}
+            />
+            <DragHandle moveDirection={moveDirection} />
+          </div>
+        )}
       </div>
 
       <div className="absolute bottom-4 right-4 flex gap-2">
@@ -96,9 +91,8 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
       </div>
 
       <div className="absolute top-4 left-4 bg-black/50 text-white text-xs px-2 py-1 rounded">
-        Drag the bright area{" "}
-        {moveDirection === "horizontal" ? "left/right" : "up/down"} to adjust
-        crop
+        {moveDirection === "horizontal" ? "Drag left/right" : "Drag up/down"} to
+        adjust crop
       </div>
     </div>
   );

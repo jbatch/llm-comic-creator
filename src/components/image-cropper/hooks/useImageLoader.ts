@@ -8,8 +8,7 @@ export function useImageLoader(imageUrl: string, aspectRatio: number) {
     width: 0,
     height: 0,
   });
-  const [moveDirection, setMoveDirection] =
-    useState<MoveDirection>("horizontal");
+  const [moveDirection, setMoveDirection] = useState<MoveDirection>("vertical");
 
   useEffect(() => {
     const image = new Image();
@@ -18,7 +17,11 @@ export function useImageLoader(imageUrl: string, aspectRatio: number) {
       setIsLoading(false);
 
       const imageAspect = image.width / image.height;
-      setMoveDirection(imageAspect > aspectRatio ? "horizontal" : "vertical");
+      // If image is significantly wider than panel, use horizontal movement
+      // Otherwise (including when ratios are close), use vertical
+      setMoveDirection(
+        imageAspect > aspectRatio * 1.1 ? "horizontal" : "vertical"
+      );
     };
     image.src = imageUrl;
   }, [imageUrl, aspectRatio]);

@@ -32,31 +32,53 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
     imageUrl: string;
   } | null>(null);
 
+  const getPanelAspectRatio = (panel: Panel): number => {
+    const A4_ASPECT = orientation === "portrait" ? 1.4142 : 1 / 1.4142;
+
+    // Calculate actual panel dimensions on A4 page
+    const panelWidth = (panel.width / 100) * dimensions.width;
+    const panelHeight = (panel.height / 100) * dimensions.height;
+
+    const aspectRatio = panelWidth / panelHeight;
+
+    console.log("Panel aspect ratio calculation:", {
+      panel: {
+        percentWidth: panel.width,
+        percentHeight: panel.height,
+      },
+      a4: {
+        pageWidth: dimensions.width,
+        pageHeight: dimensions.height,
+        pageAspect: A4_ASPECT,
+      },
+      actual: {
+        pixelWidth: panelWidth,
+        pixelHeight: panelHeight,
+        aspectRatio,
+      },
+    });
+
+    return aspectRatio;
+  };
+
   const handlePanelClick = (panelIndex: number, panel: Panel) => {
     const imageIndex = startIndex + panelIndex;
     const comicPanel = panels[imageIndex];
 
     if (comicPanel?.imageUrl) {
-      const aspectRatio = panel.width / panel.height;
+      const aspectRatio = getPanelAspectRatio(panel);
+      console.log("Opening crop dialog:", {
+        panelIndex,
+        imageIndex,
+        aspectRatio,
+      });
+
       setSelectedPanel({
         index: imageIndex,
         aspectRatio,
         imageUrl: comicPanel.imageUrl,
       });
     }
-  };
-
-  const handleCropSave = (cropState: {
-    position: { x: number; y: number };
-  }) => {
-    console.log({ selectedPanel, onUpdatePanel });
-    if (selectedPanel && onUpdatePanel) {
-      console.log("Updating panel crop settings", { cropSettings: cropState });
-      onUpdatePanel(selectedPanel.index, {
-        cropSettings: cropState,
-      });
-    }
-    setSelectedPanel(null);
   };
 
   return (
@@ -81,6 +103,9 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
               image={panels[startIndex + index]}
               imageIndex={startIndex + index}
               onClick={() => handlePanelClick(index, panel)}
+              orientation={orientation}
+              containerWidth={dimensions.width}
+              containerHeight={dimensions.height}
             />
           ))}
         </div>
@@ -95,7 +120,14 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
             <ImageCropper
               imageUrl={selectedPanel.imageUrl}
               aspectRatio={selectedPanel.aspectRatio}
-              onSave={handleCropSave}
+              onSave={(cropState) => {
+                if (onUpdatePanel) {
+                  onUpdatePanel(selectedPanel.index, {
+                    cropSettings: cropState,
+                  });
+                }
+                setSelectedPanel(null);
+              }}
               initialState={panels[selectedPanel.index].cropSettings}
             />
           )}
