@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { exportToPDF } from "@/utils/pdfExport";
 import { toast } from "@/hooks/use-toast";
-import ComicPreview from "./ComicPreview";
+import ComicPreview from "./preview/ComicPreview";
 
 interface Panel {
   x: number;
@@ -167,7 +167,8 @@ const PageThumbnail: React.FC<{
 
 const ComicLayoutV2: React.FC = () => {
   const location = useLocation();
-  const panels = location.state?.panels as ComicPanel[] | undefined;
+  const initialPanels = location.state?.panels as ComicPanel[] | undefined;
+  const [panels, setPanels] = useState<ComicPanel[]>(initialPanels || []);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<PageData[]>([]);
   const [isExporting, setIsExporting] = useState(false);
@@ -229,6 +230,27 @@ const ComicLayoutV2: React.FC = () => {
         newPages[i - 1].startIndex + newPages[i - 1].layout.panels.length;
     }
     setPages(newPages);
+  };
+
+  const handleUpdatePanel = (
+    panelIndex: number,
+    updates: Partial<ComicPanel>
+  ) => {
+    setPanels((currentPanels) => {
+      const newPanels = [...currentPanels];
+      newPanels[panelIndex] = {
+        ...newPanels[panelIndex],
+        ...updates,
+      };
+      return newPanels;
+    });
+
+    // Show a toast notification to confirm the update
+    toast({
+      title: "Panel Updated",
+      description: "Panel crop settings have been saved.",
+      duration: 2000,
+    });
   };
 
   const handleExport = async () => {
@@ -363,6 +385,7 @@ const ComicLayoutV2: React.FC = () => {
                   startIndex={pages[currentPage].startIndex}
                   pageIndex={currentPage}
                   orientation={orientation}
+                  onUpdatePanel={handleUpdatePanel}
                 />
               )}
             </CardContent>
