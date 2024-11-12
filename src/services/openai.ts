@@ -29,9 +29,16 @@ export class OpenAIService {
 
     // Check cache first (only in dev mode)
     if (!skipCache) {
-      const cachedImageUrl = openAICache.getImage(prompt);
-      if (cachedImageUrl) {
-        return { imagePrompt: prompt, imageUrl: cachedImageUrl };
+      const image = await openAICache.getImage(prompt);
+      if (image) {
+        console.log("Image Cache Hit 🎯");
+        return {
+          imagePrompt: prompt,
+          imageUrl: image.imageUrl,
+          imageBase64: image.imageBase64,
+        };
+      } else {
+        console.log("Image Cache Miss 🥺");
       }
     }
 
@@ -56,7 +63,7 @@ export class OpenAIService {
 
       // Cache the response (only in dev mode)
       if (!skipCache) {
-        openAICache.setImage(prompt, imageUrl);
+        openAICache.setImage(prompt, { imageUrl, imageBase64 });
       }
 
       return {

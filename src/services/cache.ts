@@ -1,4 +1,10 @@
 // src/services/cache.ts
+
+export interface ImageData {
+  imageUrl: string;
+  imageBase64: string;
+}
+
 export interface CachedResponse {
   content: string;
   timestamp: number;
@@ -7,7 +13,7 @@ export interface CachedResponse {
 }
 
 export interface CachedImageResponse {
-  imageUrl: string;
+  image: ImageData;
   timestamp: number;
   prompt: string;
 }
@@ -33,16 +39,6 @@ export class OpenAICache {
     }
   }
 
-  private getImageCache(): Record<string, CachedImageResponse> {
-    try {
-      const cache = localStorage.getItem(this.IMAGE_CACHE_KEY);
-      return cache ? JSON.parse(cache) : {};
-    } catch (error) {
-      console.warn("Failed to parse image cache:", error);
-      return {};
-    }
-  }
-
   private setCache(cache: Record<string, CachedResponse>): void {
     try {
       localStorage.setItem(this.CACHE_KEY, JSON.stringify(cache));
@@ -60,23 +56,6 @@ export class OpenAICache {
     }
   }
 
-  private setImageCache(cache: Record<string, CachedImageResponse>): void {
-    try {
-      localStorage.setItem(this.IMAGE_CACHE_KEY, JSON.stringify(cache));
-    } catch (error) {
-      console.warn("Failed to save to image cache:", error);
-      this.cleanOldEntries();
-      try {
-        localStorage.setItem(this.IMAGE_CACHE_KEY, JSON.stringify(cache));
-      } catch (retryError) {
-        console.error(
-          "Failed to save to image cache even after cleaning:",
-          retryError
-        );
-      }
-    }
-  }
-
   private generateCacheKey(systemPrompt: string, userPrompt: string): string {
     return `${systemPrompt}|||${userPrompt}`.replace(/\s+/g, " ").trim();
   }
@@ -87,7 +66,6 @@ export class OpenAICache {
 
   private cleanOldEntries(): void {
     const cache = this.getCache();
-    const imageCache = this.getImageCache();
     const now = Date.now();
     const maxAge = this.MAX_CACHE_AGE_DAYS * 24 * 60 * 60 * 1000;
 
@@ -99,19 +77,7 @@ export class OpenAICache {
       return acc;
     }, {} as Record<string, CachedResponse>);
 
-    // Clean image cache
-    const updatedImageCache = Object.entries(imageCache).reduce(
-      (acc, [key, value]) => {
-        if (now - value.timestamp < maxAge) {
-          acc[key] = value;
-        }
-        return acc;
-      },
-      {} as Record<string, CachedImageResponse>
-    );
-
     this.setCache(updatedCache);
-    this.setImageCache(updatedImageCache);
   }
 
   get(systemPrompt: string, userPrompt: string): string | null {
@@ -135,25 +101,29 @@ export class OpenAICache {
     return cached.content;
   }
 
-  getImage(prompt: string): string | null {
+  async getImage(prompt: string): Promise<ImageData | null> {
     if (!import.meta.env.DEV || this.shouldSkipCache()) return null;
-
-    const cache = this.getImageCache();
+    const cache = await caches.open(this.IMAGE_CACHE_KEY);
     const key = this.generateImageCacheKey(prompt);
-    const cached = cache[key];
+    const cachedResponse = await cache.match(key);
 
-    if (!cached) return null;
+    if (!cachedResponse) {
+      return null;
+    }
 
     const now = Date.now();
     const maxAge = this.MAX_CACHE_AGE_DAYS * 24 * 60 * 60 * 1000;
-    if (now - cached.timestamp > maxAge) {
-      delete cache[key];
-      this.setImageCache(cache);
+    const timestamp = parseInt(
+      cachedResponse.headers.get("X-Timestamp") || "0"
+    );
+
+    if (now - timestamp > maxAge) {
+      await this.deleteImageFromCache(key);
       return null;
     }
 
     console.log("🎯 Image cache hit:", { prompt });
-    return cached.imageUrl;
+    return JSON.parse(await cachedResponse.text());
   }
 
   set(systemPrompt: string, userPrompt: string, content: string): void {
@@ -173,25 +143,31 @@ export class OpenAICache {
     console.log("💾 Cached response for:", { systemPrompt, userPrompt });
   }
 
-  setImage(prompt: string, imageUrl: string): void {
-    if (!import.meta.env.DEV) return;
-
-    const cache = this.getImageCache();
+  async setImage(prompt: string, image: ImageData): Promise<void> {
+    const cache = await caches.open(this.IMAGE_CACHE_KEY);
     const key = this.generateImageCacheKey(prompt);
-
-    cache[key] = {
-      imageUrl,
-      timestamp: Date.now(),
-      prompt,
-    };
-
-    this.setImageCache(cache);
+    await cache.put(
+      key,
+      new Response(JSON.stringify(image), {
+        headers: {
+          "X-Timestamp": Date.now().toString(),
+        },
+      })
+    );
     console.log("💾 Cached image for:", { prompt });
   }
 
-  clear(): void {
+  private async deleteImageFromCache(key: string): Promise<void> {
+    const cache = await caches.open(this.IMAGE_CACHE_KEY);
+    await cache.delete(key);
+  }
+
+  async clear(): Promise<void> {
     localStorage.removeItem(this.CACHE_KEY);
-    localStorage.removeItem(this.IMAGE_CACHE_KEY);
+    const cache = await caches.open(this.IMAGE_CACHE_KEY);
+    await cache
+      .keys()
+      .then((keys) => Promise.all(keys.map((key) => cache.delete(key))));
     console.log("🧹 Cleared OpenAI response and image caches");
   }
 
