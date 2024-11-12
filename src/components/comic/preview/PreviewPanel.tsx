@@ -7,8 +7,6 @@ interface PreviewPanelProps {
   image?: ComicPanel;
   imageIndex: number;
   onClick: () => void;
-  containerWidth: number;
-  containerHeight: number;
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({
@@ -16,40 +14,14 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   image,
   imageIndex,
   onClick,
-  containerWidth,
-  containerHeight,
 }) => {
   const A4_ASPECT = 1.4142;
-
-  // Adjust percentages to maintain square-based aspect ratios on A4
   const adjustedDimensions = {
     x: panel.x,
     y: panel.y * A4_ASPECT,
     width: panel.width,
     height: panel.height * A4_ASPECT,
   };
-
-  // Calculate actual dimensions based on container size
-  const width = (adjustedDimensions.width / 100) * containerWidth;
-  const height =
-    ((adjustedDimensions.height / 100) * containerHeight) / A4_ASPECT;
-
-  console.log(`Panel ${imageIndex} dimensions:`, {
-    original: {
-      x: panel.x,
-      y: panel.y,
-      width: panel.width,
-      height: panel.height,
-      aspectRatio: panel.width / panel.height,
-    },
-    adjusted: {
-      width,
-      height,
-      aspectRatio: width / height,
-      containerWidth,
-      containerHeight,
-    },
-  });
 
   return (
     <div

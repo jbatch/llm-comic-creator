@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { exportToPDF } from "@/utils/pdfExport";
 import { toast } from "@/hooks/use-toast";
-import ComicPreview from "./preview/ComicPreview";
+import { ComicPreview } from "./preview/ComicPreview";
 
 interface Panel {
   x: number;

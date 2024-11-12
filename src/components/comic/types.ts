@@ -9,6 +9,7 @@ export interface CropSettings {
 export interface ComicPanel {
   imagePrompt: string;
   imageUrl?: string;
+  imageBase64?: string;
   isGenerating?: boolean;
   cropSettings?: CropSettings;
 }

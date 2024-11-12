@@ -1,15 +1,16 @@
-// src/components/comic/preview/usePreviewDimensions.ts
-import { useState, useEffect, type RefObject } from "react";
+// src/components/layout-generator/hooks/useCanvasDimensions.ts
+import { useState, useEffect, RefObject } from "react";
+import { Orientation } from "../types";
 
 interface Dimensions {
   width: number;
   height: number;
 }
 
-export function usePreviewDimensions(
+export function useCanvasDimensions(
   wrapperRef: RefObject<HTMLElement>,
-  orientation: "portrait" | "landscape"
-): { dimensions: Dimensions } {
+  orientation: Orientation
+) {
   const [dimensions, setDimensions] = useState<Dimensions>({
     width: 0,
     height: 0,
@@ -27,21 +28,11 @@ export function usePreviewDimensions(
 
       let width, height;
       if (orientation === "portrait") {
-        if (availableHeight < availableWidth * aspectRatio) {
-          height = availableHeight;
-          width = height / aspectRatio;
-        } else {
-          width = availableWidth;
-          height = width * aspectRatio;
-        }
+        height = Math.min(availableHeight, availableWidth * aspectRatio);
+        width = height / aspectRatio;
       } else {
-        if (availableWidth < availableHeight / aspectRatio) {
-          width = availableWidth;
-          height = width * aspectRatio;
-        } else {
-          height = availableHeight;
-          width = height / aspectRatio;
-        }
+        width = Math.min(availableWidth, availableHeight / aspectRatio);
+        height = width * aspectRatio;
       }
 
       setDimensions({ width, height });

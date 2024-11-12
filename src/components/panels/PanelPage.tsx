@@ -75,28 +75,24 @@ const PanelPage: React.FC = () => {
     const openai = getOpenAIService();
     if (!openai) return;
 
-    // Update panel status - use functional update to ensure we have latest state
-    setPanels((prevPanels) => {
-      console.log("Setting panel", panelIndex, "to generating...");
-      return prevPanels.map((panel, idx) =>
+    setPanels((prevPanels) =>
+      prevPanels.map((panel, idx) =>
         idx === panelIndex ? { ...panel, isGenerating: true } : panel
-      );
-    });
+      )
+    );
 
     try {
       const { imageUrl, imageBase64 } = await openai.generateImage(
         panels[panelIndex].imagePrompt
       );
 
-      // Update panel with generated image - use functional update
-      setPanels((prevPanels) => {
-        console.log("Setting image URL for panel", panelIndex);
-        return prevPanels.map((panel, idx) =>
+      setPanels((prevPanels) =>
+        prevPanels.map((panel, idx) =>
           idx === panelIndex
             ? { ...panel, imageUrl, imageBase64, isGenerating: false }
             : panel
-        );
-      });
+        )
+      );
 
       toast({
         title: "Image Generated",
@@ -104,24 +100,18 @@ const PanelPage: React.FC = () => {
           panelIndex + 1
         } image has been generated successfully.`,
       });
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "An error occurred while generating the image";
-
-      // Reset generating status - use functional update
-      setPanels((prevPanels) => {
-        console.log("Resetting generating status for panel", panelIndex);
-        return prevPanels.map((panel, idx) =>
+    } catch (error) {
+      setPanels((prevPanels) =>
+        prevPanels.map((panel, idx) =>
           idx === panelIndex ? { ...panel, isGenerating: false } : panel
-        );
-      });
+        )
+      );
 
       toast({
         variant: "destructive",
         title: "Error",
-        description: errorMessage,
+        description:
+          error instanceof Error ? error.message : "Failed to generate image",
       });
     }
   };

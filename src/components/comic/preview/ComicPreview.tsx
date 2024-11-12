@@ -33,32 +33,9 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
   } | null>(null);
 
   const getPanelAspectRatio = (panel: Panel): number => {
-    const A4_ASPECT = orientation === "portrait" ? 1.4142 : 1 / 1.4142;
-
-    // Calculate actual panel dimensions on A4 page
     const panelWidth = (panel.width / 100) * dimensions.width;
     const panelHeight = (panel.height / 100) * dimensions.height;
-
-    const aspectRatio = panelWidth / panelHeight;
-
-    console.log("Panel aspect ratio calculation:", {
-      panel: {
-        percentWidth: panel.width,
-        percentHeight: panel.height,
-      },
-      a4: {
-        pageWidth: dimensions.width,
-        pageHeight: dimensions.height,
-        pageAspect: A4_ASPECT,
-      },
-      actual: {
-        pixelWidth: panelWidth,
-        pixelHeight: panelHeight,
-        aspectRatio,
-      },
-    });
-
-    return aspectRatio;
+    return panelWidth / panelHeight;
   };
 
   const handlePanelClick = (panelIndex: number, panel: Panel) => {
@@ -66,16 +43,9 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
     const comicPanel = panels[imageIndex];
 
     if (comicPanel?.imageUrl) {
-      const aspectRatio = getPanelAspectRatio(panel);
-      console.log("Opening crop dialog:", {
-        panelIndex,
-        imageIndex,
-        aspectRatio,
-      });
-
       setSelectedPanel({
         index: imageIndex,
-        aspectRatio,
+        aspectRatio: getPanelAspectRatio(panel),
         imageUrl: comicPanel.imageUrl,
       });
     }
@@ -103,8 +73,6 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
               image={panels[startIndex + index]}
               imageIndex={startIndex + index}
               onClick={() => handlePanelClick(index, panel)}
-              containerWidth={dimensions.width}
-              containerHeight={dimensions.height}
             />
           ))}
         </div>
@@ -135,5 +103,3 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
     </>
   );
 };
-
-export default ComicPreview;
