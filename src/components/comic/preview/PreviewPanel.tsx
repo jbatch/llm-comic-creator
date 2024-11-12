@@ -7,7 +7,6 @@ interface PreviewPanelProps {
   image?: ComicPanel;
   imageIndex: number;
   onClick: () => void;
-  orientation: "portrait" | "landscape";
   containerWidth: number;
   containerHeight: number;
 }
@@ -17,7 +16,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   image,
   imageIndex,
   onClick,
-  orientation,
   containerWidth,
   containerHeight,
 }) => {

@@ -103,7 +103,6 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
               image={panels[startIndex + index]}
               imageIndex={startIndex + index}
               onClick={() => handlePanelClick(index, panel)}
-              orientation={orientation}
               containerWidth={dimensions.width}
               containerHeight={dimensions.height}
             />

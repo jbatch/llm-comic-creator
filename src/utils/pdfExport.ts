@@ -15,17 +15,9 @@ interface PageData {
   startIndex: number;
 }
 
-interface CropSettings {
-  position: {
-    x: number;
-    y: number;
-  };
-}
-
 interface ComicPanel {
   imageUrl?: string;
   imageBase64?: string;
-  cropSettings?: CropSettings;
 }
 
 interface ExportToPDFOptions {
@@ -39,11 +31,9 @@ function drawImageFill(
   x: number,
   y: number,
   width: number,
-  height: number,
-  cropSettings?: CropSettings
+  height: number
 ): Promise<void> {
   return new Promise((resolve) => {
-    // Calculate scaling to fill entire space
     const imgAspect = img.width / img.height;
     const targetAspect = width / height;
 
@@ -53,46 +43,23 @@ function drawImageFill(
     let sourceY = 0;
 
     if (imgAspect > targetAspect) {
-      // Image is wider than target area
       sourceWidth = Math.round(img.height * targetAspect);
-
-      // Apply horizontal crop position
-      if (cropSettings) {
-        sourceX = Math.round(
-          (img.width - sourceWidth) * cropSettings.position.x
-        );
-      } else {
-        sourceX = Math.round((img.width - sourceWidth) / 2);
-      }
+      sourceX = Math.round((img.width - sourceWidth) / 2);
     } else if (imgAspect < targetAspect) {
-      // Image is taller than target area
       sourceHeight = Math.round(img.width / targetAspect);
-
-      // Apply vertical crop position
-      if (cropSettings) {
-        sourceY = Math.round(
-          (img.height - sourceHeight) * cropSettings.position.y
-        );
-      } else {
-        sourceY = Math.round((img.height - sourceHeight) / 2);
-      }
+      sourceY = Math.round((img.height - sourceHeight) / 2);
     }
 
-    // Ensure source coordinates don't exceed image boundaries
-    sourceX = Math.max(0, Math.min(sourceX, img.width - sourceWidth));
-    sourceY = Math.max(0, Math.min(sourceY, img.height - sourceHeight));
-
-    // Draw the cropped and scaled image
     ctx.drawImage(
       img,
       sourceX,
       sourceY,
       sourceWidth,
-      sourceHeight, // Source rectangle
+      sourceHeight,
       x,
       y,
       width,
-      height // Destination rectangle
+      height
     );
 
     resolve();
@@ -137,17 +104,17 @@ export async function exportToPDF(
   document.body.appendChild(loading);
 
   try {
-    // Initialize PDF with correct orientation
     const pdf = new jsPDF({
       orientation,
       unit: "pt",
       format: "a4",
     });
 
-    // Get actual dimensions of the PDF page based on orientation
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
-    const margin = 40;
+
+    const margin = 10; // Reduced from 20 to 10
+    const gutterSize = 4; // Small gap between panels
 
     // Calculate usable area
     const usableWidth = pdfWidth - margin * 2;
@@ -158,14 +125,12 @@ export async function exportToPDF(
         pdf.addPage(undefined, orientation);
       }
 
-      // Create canvas with dimensions matching PDF page
       const canvas = document.createElement("canvas");
-      canvas.width = usableWidth * 2; // Double resolution for better quality
+      canvas.width = usableWidth * 2;
       canvas.height = usableHeight * 2;
       const ctx = canvas.getContext("2d")!;
-      ctx.scale(2, 2); // Scale context for higher resolution
+      ctx.scale(2, 2);
 
-      // Set white background
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, usableWidth, usableHeight);
 
@@ -181,11 +146,11 @@ export async function exportToPDF(
         const imageIndex = page.startIndex + panelIndex;
         const panelData = panels[imageIndex];
 
-        // Calculate panel position and size
+        // Calculate panel dimensions
         const x = (panel.x / 100) * usableWidth;
         const y = (panel.y / 100) * usableHeight;
-        const width = (panel.width / 100) * usableWidth;
-        const height = (panel.height / 100) * usableHeight;
+        const width = (panel.width / 100) * usableWidth - gutterSize;
+        const height = (panel.height / 100) * usableHeight - gutterSize;
 
         if (panelData?.imageBase64) {
           const img = new Image();
@@ -195,18 +160,8 @@ export async function exportToPDF(
             img.src = `data:image/png;base64,${panelData.imageBase64}`;
           });
 
-          // Draw the image using fill behavior with crop settings
-          await drawImageFill(
-            ctx,
-            img,
-            x,
-            y,
-            width,
-            height,
-            panelData.cropSettings
-          );
+          await drawImageFill(ctx, img, x, y, width, height);
         } else {
-          // Fallback for empty panels
           ctx.fillStyle = "#f3f4f6";
           ctx.fillRect(x, y, width, height);
         }
