@@ -5,7 +5,11 @@ import {
   SystemPrompt,
 } from "../config/prompts";
 import { openAICache } from "./cache";
-import { ComicPanel } from "@/components/comic/types";
+import {
+  CharacterDescriptions,
+  ComicPanel,
+  PanelShape,
+} from "@/components/comic/types";
 
 export class OpenAIService {
   private client: OpenAI | null = null;
@@ -17,7 +21,11 @@ export class OpenAIService {
     });
   }
 
-  async generateImage(prompt: string, skipCache = false): Promise<ComicPanel> {
+  async generateImage(
+    prompt: string,
+    panelShape: PanelShape,
+    skipCache = false
+  ): Promise<ComicPanel> {
     if (!this.client) {
       throw new Error("OpenAI client not initialized");
     }
@@ -28,6 +36,7 @@ export class OpenAIService {
       if (image) {
         return {
           imagePrompt: prompt,
+          panelShape,
           imageUrl: image.imageUrl,
           imageBase64: image.imageBase64,
         };
@@ -37,11 +46,11 @@ export class OpenAIService {
     try {
       const response = await this.client.images.generate({
         model: "dall-e-3",
-        prompt: `High quality, comic book style: ${prompt}`,
+        prompt: `An illustration in a detailed and vibrant comic book style with bold lines and dynamic shading: ${prompt}`,
         n: 1,
-        size: "1024x1024",
+        size: "1024x1792",
         quality: "standard",
-        style: "vivid",
+        style: "natural",
         response_format: "b64_json", // Request base64 instead of URL
       });
 
@@ -60,6 +69,7 @@ export class OpenAIService {
 
       return {
         imagePrompt: prompt,
+        panelShape,
         imageUrl,
         imageBase64,
       };
@@ -151,7 +161,10 @@ export class OpenAIService {
   async generateComicPanels(
     storyContent: string,
     skipCache = false
-  ): Promise<{ panels: ComicPanel[] }> {
+  ): Promise<{
+    characters: CharacterDescriptions;
+    panels: ComicPanel[];
+  }> {
     const response = await this.generateWithPrompt(
       storyContent,
       getGenerateComicPanelsSystemPrompt(),
@@ -163,7 +176,10 @@ export class OpenAIService {
     );
 
     try {
-      const parsedResponse = JSON.parse(response) as { panels: ComicPanel[] };
+      const parsedResponse = JSON.parse(response) as {
+        characters: CharacterDescriptions;
+        panels: ComicPanel[];
+      };
       return parsedResponse;
     } catch {
       throw new Error("Failed to parse comic panel response from OpenAI");

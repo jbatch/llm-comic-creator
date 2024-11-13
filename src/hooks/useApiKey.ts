@@ -1,48 +1,47 @@
 // src/hooks/useApiKey.ts
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
-const LOCAL_STORAGE_KEY = "openai-api-key";
+const OPEN_AI_LOCAL_STORAGE_KEY = "openai-api-key";
+const LEONARDO_LOCAL_STORAGE_KEY = "leonardo-api-key";
+
+export interface ApiKeys {
+  openAi: string | null;
+  leonardo: string | null;
+}
 
 export const useApiKey = () => {
-  const [apiKey, setApiKeyState] = useState<string | null>(() => {
+  const [apiKeys, setApiKeyState] = useState<ApiKeys | null>(() => {
     // Initialize from localStorage on mount
-    return localStorage.getItem(LOCAL_STORAGE_KEY);
+    return {
+      openAi: localStorage.getItem(OPEN_AI_LOCAL_STORAGE_KEY),
+      leonardo: localStorage.getItem(LEONARDO_LOCAL_STORAGE_KEY),
+    };
   });
 
-  const getApiKey = useCallback((): string | null => {
-    return apiKey;
-  }, [apiKey]);
+  const getApiKeys = useCallback((): ApiKeys | null => {
+    return apiKeys;
+  }, [apiKeys]);
 
-  const setApiKey = useCallback((key: string): void => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, key);
-    setApiKeyState(key);
+  const setApiKeys = useCallback((keys: ApiKeys): void => {
+    localStorage.setItem(OPEN_AI_LOCAL_STORAGE_KEY, keys.openAi!);
+    localStorage.setItem(LEONARDO_LOCAL_STORAGE_KEY, keys.leonardo!);
+    setApiKeyState(keys);
   }, []);
 
-  const clearApiKey = useCallback((): void => {
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
+  const clearApiKeys = useCallback((): void => {
+    localStorage.removeItem(OPEN_AI_LOCAL_STORAGE_KEY);
+    localStorage.removeItem(LEONARDO_LOCAL_STORAGE_KEY);
     setApiKeyState(null);
   }, []);
 
-  const hasApiKey = useCallback((): boolean => {
-    return !!apiKey;
-  }, [apiKey]);
-
-  // Sync with localStorage changes (e.g., from another tab)
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === LOCAL_STORAGE_KEY) {
-        setApiKeyState(e.newValue);
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  const hasApiKeys = useCallback((): boolean => {
+    return !!apiKeys;
+  }, [apiKeys]);
 
   return {
-    getApiKey,
-    setApiKey,
-    clearApiKey,
-    hasApiKey,
+    getApiKeys,
+    setApiKeys,
+    clearApiKeys,
+    hasApiKeys,
   };
 };

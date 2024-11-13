@@ -10,28 +10,39 @@ import PanelBreadcrumb from "./PanelBreadcrumb";
 import PanelGrid from "./PanelGrid";
 import { Link } from "react-router-dom";
 import { BookOpen } from "lucide-react";
-import { ComicPanel } from "../comic/types";
+import { CharacterDescriptions, ComicPanel } from "../comic/types";
+import { LeonardoService } from "@/services/leonardo";
 
 const PanelPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getApiKey } = useApiKey();
+  const { getApiKeys } = useApiKey();
   const storyContent = location.state?.content;
 
   const [panels, setPanels] = useState<ComicPanel[]>([]);
+  const [characters, setCharacters] = useState<CharacterDescriptions>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Create a memoized function to get the OpenAI service
   const getOpenAIService = useCallback(() => {
-    const apiKey = getApiKey();
+    const apiKey = getApiKeys()?.openAi;
     if (!apiKey) {
       navigate("/settings");
       return null;
     }
     return new OpenAIService(apiKey);
-  }, [getApiKey, navigate]);
+  }, [getApiKeys, navigate]);
+
+  const getLeonardoService = useCallback(() => {
+    const apiKey = getApiKeys()?.leonardo;
+    if (!apiKey) {
+      navigate("/settings");
+      return null;
+    }
+    return new LeonardoService(apiKey);
+  }, [getApiKeys, navigate]);
 
   const generatePanels = useCallback(async () => {
     const openai = getOpenAIService();
@@ -42,7 +53,9 @@ const PanelPage: React.FC = () => {
 
     try {
       const response = await openai.generateComicPanels(storyContent);
+      console.log({ response });
       setPanels(response.panels);
+      setCharacters(response.characters);
     } catch (err) {
       const errorMessage =
         err instanceof Error
@@ -73,9 +86,20 @@ const PanelPage: React.FC = () => {
     generatePanels();
   };
 
+  const handleGenerateAllImages = () => {
+    panels.map((_panel, index) => handleGenerateImage(index));
+  };
+
   const handleGenerateImage = async (panelIndex: number) => {
-    const openai = getOpenAIService();
-    if (!openai) return;
+    // const imageGenerationService = getOpenAIService();
+    const imageGenerationService = getLeonardoService();
+    if (!imageGenerationService) return;
+    const panel = panels[panelIndex];
+
+    const charactersInScene = Object.keys(characters)
+      .filter((characterName) => panel.imagePrompt.includes(characterName))
+      .map((name) => `${name}: ${characters[name]}`)
+      .join("\n");
 
     setPanels((prevPanels) =>
       prevPanels.map((panel, idx) =>
@@ -84,9 +108,13 @@ const PanelPage: React.FC = () => {
     );
 
     try {
-      const { imageUrl, imageBase64 } = await openai.generateImage(
-        panels[panelIndex].imagePrompt
-      );
+      const promptWithCharacters = charactersInScene + "\n" + panel.imagePrompt;
+      console.log("Generating", { panel, promptWithCharacters });
+      const { imageUrl, imageBase64 } =
+        await imageGenerationService.generateImage(
+          promptWithCharacters,
+          panel.panelShape
+        );
 
       setPanels((prevPanels) =>
         prevPanels.map((panel, idx) =>
@@ -136,13 +164,23 @@ const PanelPage: React.FC = () => {
               Your story visualized as comic panels
             </p>
           </div>
-          <Button
-            onClick={handleRegeneratePanels}
-            disabled={isLoading}
-            variant="outline"
-          >
-            Regenerate Panels
-          </Button>
+          <div>
+            <Button
+              onClick={handleRegeneratePanels}
+              disabled={isLoading}
+              variant="outline"
+              className="mr-2"
+            >
+              Regenerate Panels
+            </Button>
+            <Button
+              onClick={handleGenerateAllImages}
+              disabled={isLoading}
+              variant="outline"
+            >
+              Generate All Images
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -164,7 +202,7 @@ const PanelPage: React.FC = () => {
 
           {allPanelsHaveImages() && (
             <Button asChild className="gap-2">
-              <Link to="/comic2" state={{ panels }}>
+              <Link to="/comic" state={{ panels }}>
                 <BookOpen className="h-4 w-4" />
                 Generate Comic
               </Link>

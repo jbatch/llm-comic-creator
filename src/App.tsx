@@ -4,8 +4,7 @@ import Layout from "./components/Layout";
 import PromptPage from "./components/prompt/PromptPage";
 import PanelsPage from "./components/panels/PanelPage";
 import ApiKeyPage from "./components/settings/ApiKeyPage";
-import ComicLayout from "./components/comic/ComicLayout";
-import ComicLayoutV2 from "./components/comic/ComicLayoutV2";
+import ComicLayout from "./components/comic/ComicPage";
 import LayoutGeneratorPage from "./components/layout-generator/LayoutGeneratorPage";
 
 function App() {
@@ -17,7 +16,6 @@ function App() {
           <Route path="/panels" element={<PanelsPage />} />
           <Route path="/settings" element={<ApiKeyPage />} />
           <Route path="/comic" element={<ComicLayout />} />
-          <Route path="/comic2" element={<ComicLayoutV2 />} />
           <Route path="/layout" element={<LayoutGeneratorPage />} />
         </Route>
       </Routes>

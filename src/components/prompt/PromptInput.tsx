@@ -6,7 +6,9 @@ import { Loader2 } from "lucide-react";
 import { PromptInputProps } from "./types";
 
 const PromptInput: React.FC<PromptInputProps> = ({ onSubmit, isLoading }) => {
-  const [prompt, setPrompt] = useState<string>("Two dogs go on a date");
+  const [prompt, setPrompt] = useState<string>(`
+The origin story of the superhero Aura Echo - A deaf musician with the ability to generate sonic waves and manipulate vibrations, with an empathic link to emotions.
+`);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

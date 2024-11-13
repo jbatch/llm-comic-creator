@@ -52,6 +52,38 @@ const layoutTemplates: LayoutTemplate[] = [
       { x: 66.66, y: 50, width: 33.33, height: 50 },
     ],
   },
+  {
+    id: "six-panel",
+    name: "Six Panel",
+    panels: [
+      { x: 0, y: 0, width: 50, height: 33.33 },
+      { x: 50, y: 0, width: 50, height: 33.33 },
+      { x: 0, y: 33.33, width: 50, height: 33.33 },
+      { x: 50, y: 33.33, width: 50, height: 33.33 },
+      { x: 0, y: 66.66, width: 50, height: 33.33 },
+      { x: 50, y: 66.66, width: 50, height: 33.33 },
+    ],
+  },
+  {
+    id: "landscapes",
+    name: "Landscapes",
+    panels: [
+      { x: 0, y: 0, width: 100, height: 33.33 },
+      { x: 0, y: 33.33, width: 100, height: 33.33 },
+      { x: 0, y: 66.66, width: 100, height: 33.33 },
+    ],
+  },
+  {
+    id: "marvel",
+    name: "Marvel",
+    panels: [
+      { x: 0, y: 0, width: 100, height: 25 },
+      { x: 0, y: 25, width: 100, height: 25 },
+      { x: 0, y: 50, width: 50, height: 25 },
+      { x: 50, y: 50, width: 50, height: 25 },
+      { x: 0, y: 75, width: 100, height: 25 },
+    ],
+  },
 ];
 
 const LayoutPreview: React.FC<LayoutPreviewProps> = ({
@@ -142,7 +174,7 @@ const PageThumbnail: React.FC<{
   </button>
 );
 
-const ComicLayoutV2: React.FC = () => {
+const ComicPage: React.FC = () => {
   const location = useLocation();
   const initialPanels = location.state?.panels as ComicPanel[] | undefined;
   const [panels, setPanels] = useState<ComicPanel[]>(initialPanels || []);
@@ -424,4 +456,4 @@ const ComicLayoutV2: React.FC = () => {
   );
 };
 
-export default ComicLayoutV2;
+export default ComicPage;

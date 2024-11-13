@@ -174,6 +174,24 @@ export async function exportToPDF(
             height,
             panelData.cropSettings
           );
+        } else if (panelData?.imageUrl) {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = reject;
+            img.src = panelData.imageUrl!;
+          });
+
+          await drawImageFill(
+            ctx,
+            img,
+            x,
+            y,
+            width,
+            height,
+            panelData.cropSettings
+          );
         } else {
           ctx.fillStyle = "#f3f4f6";
           ctx.fillRect(x, y, width, height);

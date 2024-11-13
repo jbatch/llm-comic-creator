@@ -12,21 +12,21 @@ const PromptPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { getApiKey, hasApiKey } = useApiKey();
+  const { getApiKeys, hasApiKeys } = useApiKey();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!hasApiKey()) {
+    if (!hasApiKeys()) {
       navigate("/settings");
     }
-  }, [hasApiKey, navigate]);
+  }, [hasApiKeys, navigate]);
 
   const handlePromptSubmit = async (prompt: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
-    const apiKey = getApiKey();
+    const apiKey = getApiKeys()?.openAi;
     if (!apiKey) {
       setError(
         "API key not found. Please add your OpenAI API key in settings."

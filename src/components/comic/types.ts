@@ -6,8 +6,14 @@ export interface CropSettings {
   };
 }
 
+export interface CharacterDescriptions {
+  [characterName: string]: string;
+}
+
+export type PanelShape = "SQUARE" | "PORTRAIT" | "LANDSCAPE";
 export interface ComicPanel {
   imagePrompt: string;
+  panelShape: PanelShape;
   imageUrl?: string;
   imageBase64?: string;
   isGenerating?: boolean;

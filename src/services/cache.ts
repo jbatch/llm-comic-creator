@@ -2,7 +2,7 @@
 
 export interface ImageData {
   imageUrl: string;
-  imageBase64: string;
+  imageBase64?: string;
 }
 
 export interface CachedResponse {
@@ -61,7 +61,7 @@ export class OpenAICache {
   }
 
   private generateImageCacheKey(prompt: string): string {
-    return prompt.replace(/\s+/g, " ").trim();
+    return encodeURIComponent(prompt.replace(/\s+/g, " ").trim());
   }
 
   private cleanOldEntries(): void {
@@ -146,6 +146,7 @@ export class OpenAICache {
   async setImage(prompt: string, image: ImageData): Promise<void> {
     const cache = await caches.open(this.IMAGE_CACHE_KEY);
     const key = this.generateImageCacheKey(prompt);
+    console.log("saving image to cache", { key });
     await cache.put(
       key,
       new Response(JSON.stringify(image), {
