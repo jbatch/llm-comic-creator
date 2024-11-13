@@ -11,37 +11,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportToPDF } from "@/utils/pdfExport";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/useToast";
 import { ComicPreview } from "./preview/ComicPreview";
-
-interface Panel {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface LayoutTemplate {
-  id: string;
-  name: string;
-  panels: Panel[];
-}
+import { ComicPanel, LayoutTemplate, PageData } from "./types";
 
 interface LayoutPreviewProps {
   layout: LayoutTemplate;
   isSelected: boolean;
   onClick: () => void;
-}
-
-interface ComicPanel {
-  imagePrompt: string;
-  imageUrl?: string;
-  isGenerating?: boolean;
-}
-
-interface PageData {
-  layout: LayoutTemplate;
-  startIndex: number;
 }
 
 const layoutTemplates: LayoutTemplate[] = [
@@ -258,7 +235,6 @@ const ComicLayoutV2: React.FC = () => {
 
     setIsExporting(true);
     try {
-      console.log("Starting export with panels:", panels);
       await exportToPDF(pages, panels, { title: "My Comic", orientation });
       toast({
         title: "Export Successful",

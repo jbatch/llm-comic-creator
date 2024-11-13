@@ -1,31 +1,5 @@
+import { ComicPanel, CropSettings, PageData } from "@/components/comic/types";
 import jsPDF from "jspdf";
-
-interface Panel {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface PageData {
-  layout: {
-    panels: Panel[];
-  };
-  startIndex: number;
-}
-
-interface CropSettings {
-  position: {
-    x: number;
-    y: number;
-  };
-}
-
-interface ComicPanel {
-  imageUrl?: string;
-  imageBase64?: string;
-  cropSettings?: CropSettings;
-}
 
 interface ExportToPDFOptions {
   title?: string;
@@ -175,10 +149,6 @@ export async function exportToPDF(
         const panel = page.layout.panels[panelIndex];
         const imageIndex = page.startIndex + panelIndex;
         const panelData = panels[imageIndex];
-
-        // Calculate panel position and size with padding
-        const paddingX = (panelPadding / usableWidth) * 100;
-        const paddingY = (panelPadding / usableHeight) * 100;
 
         const x = ((panel.x / 100) * usableWidth + panelPadding) * mmToPoints;
         const y = ((panel.y / 100) * usableHeight + panelPadding) * mmToPoints;

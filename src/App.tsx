@@ -1,7 +1,7 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
-import PromptPage from "./components/PromptPage";
+import PromptPage from "./components/prompt/PromptPage";
 import PanelsPage from "./components/panels/PanelPage";
 import ApiKeyPage from "./components/ApiKeyPage";
 import ComicLayout from "./components/comic/ComicLayout";

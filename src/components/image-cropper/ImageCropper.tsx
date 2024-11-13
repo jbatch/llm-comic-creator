@@ -23,10 +23,8 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cropAreaRef = useRef<HTMLDivElement>(null);
-  console.log(`Open imagecropper with aspectRatio: ${aspectRatio}`);
 
   const dimensions = useCropDimensions(containerRef, aspectRatio);
-  console.log("calculated dimensions", { dimensions });
   const { isLoading, moveDirection } = useImageLoader(imageUrl, aspectRatio);
   const { position, isDragging, startDragging, setPosition } = useDragging(
     moveDirection,

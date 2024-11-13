@@ -30,26 +30,7 @@ export function calculateAdjustedPanel(
 
 export function useLayoutCalculator(orientation: "portrait" | "landscape") {
   const adjustPanel = (panel: Panel): Panel => {
-    const adjusted = calculateAdjustedPanel(panel, orientation);
-
-    console.log("Panel adjustment:", {
-      original: {
-        x: panel.x,
-        y: panel.y,
-        width: panel.width,
-        height: panel.height,
-        aspectRatio: panel.width / panel.height,
-      },
-      adjusted: {
-        x: adjusted.x,
-        y: adjusted.y,
-        width: adjusted.width,
-        height: adjusted.height,
-        aspectRatio: adjusted.width / adjusted.height,
-      },
-    });
-
-    return adjusted;
+    return calculateAdjustedPanel(panel, orientation);
   };
 
   return { adjustPanel };

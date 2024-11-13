@@ -5,12 +5,7 @@ import {
   SystemPrompt,
 } from "../config/prompts";
 import { openAICache } from "./cache";
-export interface ComicPanel {
-  imagePrompt: string;
-  imageUrl?: string;
-  imageBase64?: string; // Add base64 support
-  isGenerating?: boolean;
-}
+import { ComicPanel } from "@/components/comic/types";
 
 export class OpenAIService {
   private client: OpenAI | null = null;
@@ -31,14 +26,11 @@ export class OpenAIService {
     if (!skipCache) {
       const image = await openAICache.getImage(prompt);
       if (image) {
-        console.log("Image Cache Hit 🎯");
         return {
           imagePrompt: prompt,
           imageUrl: image.imageUrl,
           imageBase64: image.imageBase64,
         };
-      } else {
-        console.log("Image Cache Miss 🥺");
       }
     }
 

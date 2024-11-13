@@ -1,14 +1,16 @@
 // src/components/panel/PanelPage.tsx
+
 import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { OpenAIService, ComicPanel } from "../../services/openai";
+import { OpenAIService } from "../../services/openai";
 import { useApiKey } from "../../hooks/useApiKey";
-import { useToast } from "../../hooks/use-toast";
+import { useToast } from "../../hooks/useToast";
 import PanelBreadcrumb from "./PanelBreadcrumb";
 import PanelGrid from "./PanelGrid";
 import { Link } from "react-router-dom";
 import { BookOpen } from "lucide-react";
+import { ComicPanel } from "../comic/types";
 
 const PanelPage: React.FC = () => {
   const location = useLocation();

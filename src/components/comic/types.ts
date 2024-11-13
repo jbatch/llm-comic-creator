@@ -26,3 +26,8 @@ export interface LayoutTemplate {
   name: string;
   panels: Panel[];
 }
+
+export interface PageData {
+  layout: LayoutTemplate;
+  startIndex: number;
+}

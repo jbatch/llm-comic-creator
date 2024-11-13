@@ -1,8 +1,8 @@
 // src/components/panel/PanelGrid.tsx
 import React from "react";
-import { ComicPanel } from "../../services/openai";
 import PanelCard from "./PanelCard";
 import PanelCardSkeleton from "./PanelCardSekeleton";
+import { ComicPanel } from "../comic/types";
 
 interface PanelGridProps {
   panels: ComicPanel[];

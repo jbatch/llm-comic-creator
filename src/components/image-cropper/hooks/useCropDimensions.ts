@@ -32,16 +32,6 @@ export function useCropDimensions(
           width = height * aspectRatio;
         }
 
-        console.log("Container dimensions:", {
-          containerWidth: container.clientWidth,
-          containerHeight: container.clientHeight,
-          availableWidth,
-          availableHeight,
-          calculatedWidth: width,
-          calculatedHeight: height,
-          aspectRatio,
-        });
-
         setDimensions({ width, height });
       }
     };
