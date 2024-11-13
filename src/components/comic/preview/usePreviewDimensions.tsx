@@ -50,7 +50,7 @@ export function usePreviewDimensions(
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
     return () => window.removeEventListener("resize", updateDimensions);
-  }, [orientation]);
+  }, [orientation, wrapperRef]);
 
   return { dimensions };
 }

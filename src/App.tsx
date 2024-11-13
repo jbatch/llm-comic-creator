@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import PromptPage from "./components/prompt/PromptPage";
 import PanelsPage from "./components/panels/PanelPage";
-import ApiKeyPage from "./components/ApiKeyPage";
+import ApiKeyPage from "./components/settings/ApiKeyPage";
 import ComicLayout from "./components/comic/ComicLayout";
 import ComicLayoutV2 from "./components/comic/ComicLayoutV2";
 import LayoutGeneratorPage from "./components/layout-generator/LayoutGeneratorPage";
