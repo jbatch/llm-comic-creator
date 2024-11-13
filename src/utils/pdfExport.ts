@@ -1,7 +1,4 @@
-// src/utils/pdfExport.ts
 import jsPDF from "jspdf";
-import { createLoadingOverlay } from "./loadingOverlay";
-import { ComicPanel } from "@/components/comic/types";
 
 interface Panel {
   x: number;
@@ -17,59 +14,79 @@ interface PageData {
   startIndex: number;
 }
 
+interface CropSettings {
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+interface ComicPanel {
+  imageUrl?: string;
+  imageBase64?: string;
+  cropSettings?: CropSettings;
+}
+
 interface ExportToPDFOptions {
   title?: string;
   orientation: "portrait" | "landscape";
 }
 
-interface PanelDimensions {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface RenderDimensions {
-  usableWidth: number;
-  usableHeight: number;
-  gutterSize: number;
-}
-
-async function drawImageFill(
+function drawImageFill(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   x: number,
   y: number,
   width: number,
-  height: number
+  height: number,
+  cropSettings?: CropSettings
 ): Promise<void> {
-  const imgAspect = img.width / img.height;
-  const targetAspect = width / height;
+  return new Promise((resolve) => {
+    const imgAspect = img.width / img.height;
+    const targetAspect = width / height;
 
-  let sourceWidth = img.width;
-  let sourceHeight = img.height;
-  let sourceX = 0;
-  let sourceY = 0;
+    let sourceWidth = img.width;
+    let sourceHeight = img.height;
+    let sourceX = 0;
+    let sourceY = 0;
 
-  if (imgAspect > targetAspect) {
-    sourceWidth = Math.round(img.height * targetAspect);
-    sourceX = Math.round((img.width - sourceWidth) / 2);
-  } else if (imgAspect < targetAspect) {
-    sourceHeight = Math.round(img.width / targetAspect);
-    sourceY = Math.round((img.height - sourceHeight) / 2);
-  }
+    if (imgAspect > targetAspect) {
+      sourceWidth = Math.round(img.height * targetAspect);
+      if (cropSettings) {
+        sourceX = Math.round(
+          (img.width - sourceWidth) * cropSettings.position.x
+        );
+      } else {
+        sourceX = Math.round((img.width - sourceWidth) / 2);
+      }
+    } else if (imgAspect < targetAspect) {
+      sourceHeight = Math.round(img.width / targetAspect);
+      if (cropSettings) {
+        sourceY = Math.round(
+          (img.height - sourceHeight) * cropSettings.position.y
+        );
+      } else {
+        sourceY = Math.round((img.height - sourceHeight) / 2);
+      }
+    }
 
-  ctx.drawImage(
-    img,
-    sourceX,
-    sourceY,
-    sourceWidth,
-    sourceHeight,
-    x,
-    y,
-    width,
-    height
-  );
+    sourceX = Math.max(0, Math.min(sourceX, img.width - sourceWidth));
+    sourceY = Math.max(0, Math.min(sourceY, img.height - sourceHeight));
+
+    ctx.drawImage(
+      img,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      x,
+      y,
+      width,
+      height
+    );
+
+    resolve();
+  });
 }
 
 export async function exportToPDF(
@@ -78,22 +95,60 @@ export async function exportToPDF(
   options: ExportToPDFOptions
 ): Promise<void> {
   const { title = "Comic", orientation } = options;
-  const loading = createLoadingOverlay();
+
+  // Create loading overlay
+  const loading = document.createElement("div");
+  loading.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+
+  const loadingContent = document.createElement("div");
+  loadingContent.style.cssText = `
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    text-align: center;
+  `;
+  loadingContent.innerHTML = `
+    <div>Generating PDF...</div>
+    <div style="color: #666; margin-top: 8px; font-size: 14px;">This may take a few moments</div>
+  `;
+
+  loading.appendChild(loadingContent);
   document.body.appendChild(loading);
 
   try {
     const pdf = new jsPDF({
       orientation,
-      unit: "pt",
+      unit: "mm",
       format: "a4",
     });
 
+    // Get dimensions in mm
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
-    const margin = 10;
-    const gutterSize = 4;
+
+    // Set smaller margins and panel padding
+    const margin = 2; // 2mm margin
+    const panelPadding = 1; // 1mm padding between panels
+
+    // Calculate usable area
     const usableWidth = pdfWidth - margin * 2;
     const usableHeight = pdfHeight - margin * 2;
+
+    // Convert mm to points for canvas drawing
+    const mmToPoints = 2.83465;
+    const canvasWidth = usableWidth * mmToPoints * 2; // Double resolution
+    const canvasHeight = usableHeight * mmToPoints * 2;
 
     for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
       if (pageIndex > 0) {
@@ -101,25 +156,66 @@ export async function exportToPDF(
       }
 
       const canvas = document.createElement("canvas");
-      canvas.width = usableWidth * 2;
-      canvas.height = usableHeight * 2;
-      const ctx = canvas.getContext("2d");
-
-      if (!ctx) {
-        throw new Error("Failed to get canvas context");
-      }
-
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext("2d")!;
       ctx.scale(2, 2);
+
       ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, usableWidth, usableHeight);
+      ctx.fillRect(0, 0, canvasWidth / 2, canvasHeight / 2);
 
       const page = pages[pageIndex];
-      await renderPagePanels(ctx, page, panels, {
-        usableWidth,
-        usableHeight,
-        gutterSize,
-      });
 
+      // Draw each panel with padding
+      for (
+        let panelIndex = 0;
+        panelIndex < page.layout.panels.length;
+        panelIndex++
+      ) {
+        const panel = page.layout.panels[panelIndex];
+        const imageIndex = page.startIndex + panelIndex;
+        const panelData = panels[imageIndex];
+
+        // Calculate panel position and size with padding
+        const paddingX = (panelPadding / usableWidth) * 100;
+        const paddingY = (panelPadding / usableHeight) * 100;
+
+        const x = ((panel.x / 100) * usableWidth + panelPadding) * mmToPoints;
+        const y = ((panel.y / 100) * usableHeight + panelPadding) * mmToPoints;
+        const width =
+          ((panel.width / 100) * usableWidth - panelPadding * 2) * mmToPoints;
+        const height =
+          ((panel.height / 100) * usableHeight - panelPadding * 2) * mmToPoints;
+
+        if (panelData?.imageBase64) {
+          const img = new Image();
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = reject;
+            img.src = `data:image/png;base64,${panelData.imageBase64}`;
+          });
+
+          await drawImageFill(
+            ctx,
+            img,
+            x,
+            y,
+            width,
+            height,
+            panelData.cropSettings
+          );
+        } else {
+          ctx.fillStyle = "#f3f4f6";
+          ctx.fillRect(x, y, width, height);
+        }
+
+        // Draw panel border
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, width, height);
+      }
+
+      // Add the page to PDF with mm units
       const pageData = canvas.toDataURL("image/jpeg", 1.0);
       pdf.addImage(pageData, "JPEG", margin, margin, usableWidth, usableHeight);
     }
@@ -128,63 +224,4 @@ export async function exportToPDF(
   } finally {
     document.body.removeChild(loading);
   }
-}
-
-async function renderPagePanels(
-  ctx: CanvasRenderingContext2D,
-  page: PageData,
-  panels: ComicPanel[],
-  dimensions: RenderDimensions
-): Promise<void> {
-  const { usableWidth, usableHeight, gutterSize } = dimensions;
-
-  for (
-    let panelIndex = 0;
-    panelIndex < page.layout.panels.length;
-    panelIndex++
-  ) {
-    const panel = page.layout.panels[panelIndex];
-    const imageIndex = page.startIndex + panelIndex;
-    const panelData = panels[imageIndex];
-
-    const bounds: PanelDimensions = {
-      x: (panel.x / 100) * usableWidth,
-      y: (panel.y / 100) * usableHeight,
-      width: (panel.width / 100) * usableWidth - gutterSize,
-      height: (panel.height / 100) * usableHeight - gutterSize,
-    };
-
-    await renderPanel(ctx, panelData, bounds);
-  }
-}
-
-async function renderPanel(
-  ctx: CanvasRenderingContext2D,
-  panelData: ComicPanel | undefined,
-  bounds: PanelDimensions
-): Promise<void> {
-  const { x, y, width, height } = bounds;
-
-  if (panelData?.imageBase64) {
-    const img = await loadImage(
-      `data:image/png;base64,${panelData.imageBase64}`
-    );
-    await drawImageFill(ctx, img, x, y, width, height);
-  } else {
-    ctx.fillStyle = "#f3f4f6";
-    ctx.fillRect(x, y, width, height);
-  }
-
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x, y, width, height);
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
 }
