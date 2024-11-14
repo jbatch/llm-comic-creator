@@ -245,6 +245,7 @@ const ComicPage: React.FC = () => {
     panelIndex: number,
     updates: Partial<ComicPanel>
   ) => {
+    console.log("Updating", { panelIndex, updates });
     setPanels((currentPanels) => {
       const newPanels = [...currentPanels];
       newPanels[panelIndex] = {

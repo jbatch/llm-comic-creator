@@ -11,8 +11,15 @@ export interface CharacterDescriptions {
 }
 
 export type PanelShape = "SQUARE" | "PORTRAIT" | "LANDSCAPE";
+
+export type TextBox = {
+  type: "SPEECH" | "NARRATION";
+  character: string;
+  text: string;
+};
 export interface ComicPanel {
   imagePrompt: string;
+  text?: TextBox[];
   panelShape: PanelShape;
   imageUrl?: string;
   imageBase64?: string;

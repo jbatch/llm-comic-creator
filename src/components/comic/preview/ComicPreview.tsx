@@ -1,11 +1,10 @@
 // src/components/comic/preview/ComicPreview.tsx
 import React, { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Panel, type ComicPanel, type LayoutTemplate } from "../types";
-import { ImageCropper } from "../../image-cropper/ImageCropper";
 import { PreviewPanel } from "./PreviewPanel";
 import { usePreviewDimensions } from "./usePreviewDimensions";
+import { PanelEditorDialog } from "../../panel-editor/PanelEditorDialog";
 
 interface ComicPreviewProps {
   layout: LayoutTemplate;
@@ -29,7 +28,7 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
   const [selectedPanel, setSelectedPanel] = useState<{
     index: number;
     aspectRatio: number;
-    imageUrl: string;
+    panel: ComicPanel;
   } | null>(null);
 
   const getPanelAspectRatio = (panel: Panel): number => {
@@ -46,8 +45,15 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
       setSelectedPanel({
         index: imageIndex,
         aspectRatio: getPanelAspectRatio(panel),
-        imageUrl: comicPanel.imageUrl,
+        panel: comicPanel,
       });
+    }
+  };
+
+  const handleUpdatePanel = (updates: Partial<ComicPanel>) => {
+    console.log("handleUpdatePanel", { selectedPanel, onUpdatePanel });
+    if (selectedPanel && onUpdatePanel) {
+      onUpdatePanel(selectedPanel.index, updates);
     }
   };
 
@@ -78,28 +84,13 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
         </div>
       </Card>
 
-      <Dialog
+      <PanelEditorDialog
         open={selectedPanel !== null}
-        onOpenChange={() => setSelectedPanel(null)}
-      >
-        <DialogContent className="max-w-4xl p-0">
-          {selectedPanel && (
-            <ImageCropper
-              imageUrl={selectedPanel.imageUrl}
-              aspectRatio={selectedPanel.aspectRatio}
-              onSave={(cropState) => {
-                if (onUpdatePanel) {
-                  onUpdatePanel(selectedPanel.index, {
-                    cropSettings: cropState,
-                  });
-                }
-                setSelectedPanel(null);
-              }}
-              initialState={panels[selectedPanel.index].cropSettings}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        onOpenChange={(open) => !open && setSelectedPanel(null)}
+        panel={selectedPanel?.panel ?? null}
+        aspectRatio={selectedPanel?.aspectRatio ?? 1}
+        onUpdatePanel={handleUpdatePanel}
+      />
     </>
   );
 };

@@ -120,3 +120,70 @@ Bad: "Sarah feels afraid when she discovers her home has been broken into and re
 - Maintain story flow and pacing through panel sequence
 `,
 });
+
+export const getGenerateSpeechForPanelSystemPrompt = (): SystemPrompt => ({
+  role: "system",
+  content: `
+Generate speech bubble text for a comic book panel based on the panel's description and return as structured JSON.
+
+Use the detailed description provided to determine suitable lines of dialogue or sound effects that naturally fit the panel. Consider the character's actions, emotions, motivation, and any secondary character reactions to produce an authentic conversational flow or commentary. If it's reasonable, generate multiple pieces of dialogue to contribute to the storytelling. Always ensure text fits a comic book tone—brief, impactful, and character-driven.
+
+# Steps:
+
+- Read and understand the scene description carefully.
+- Decide on the appropriate number of speech bubbles.
+- Craft dialogue that aligns with each character's motivations and goals.
+- Make sure each piece of dialogue is short enough to fit in a comic speech bubble, avoiding overly lengthy sentences.
+- Ensure comic book formatting rules are followed: Speech bubbles should convey immediate thoughts, actions, or emotions.
+
+# Output Format:
+
+Return the output as a JSON array of objects using the "SPEECH" type. Each object should adhere to the format mentioned below:
+
+\`\`\`json
+{
+  "text":
+    [
+      {
+        "type": "SPEECH",
+        "character": "[Who is speaking]",
+        "text": "[Line of dialogue here]"
+      },
+      {
+        "type": "SPEECH",
+        "character": "[Who is speaking]",
+        "text": "[Another line of dialogue, if applicable]"
+      }
+    ]
+}
+\`\`\`
+
+- Text should be direct, impactful, and fit a comic book style.
+- Always return at least one text box if possible.
+- May include different characters speaking if relevant to the panel.
+  
+# Examples:
+
+## Input:
+"Emily, wearing a special suit that vibrates with sound waves, is practicing her powers. She's directing a sonic wave at a set of drums, causing them to resonate and create a rhythm. Dr. Harmon is seen in the background, monitoring her progress."
+
+## Example Output:
+\`\`\`json
+{
+  "text":
+    [
+      {
+        "type": "SPEECH",
+        "charatcer" : "Emily",
+        "text": "Okay, let's focus... sonic wave, steady rhythm...!"
+      },
+      {
+        "type": "SPEECH",
+        "character": "Dr. Harmon",
+        "text": "Keep it steady, Emily! You're almost there."
+      }
+    ]
+}
+\`\`\` 
+`,
+});

@@ -2,6 +2,7 @@
 import OpenAI from "openai";
 import {
   getGenerateComicPanelsSystemPrompt,
+  getGenerateSpeechForPanelSystemPrompt,
   SystemPrompt,
 } from "../config/prompts";
 import { openAICache } from "./cache";
@@ -9,6 +10,7 @@ import {
   CharacterDescriptions,
   ComicPanel,
   PanelShape,
+  TextBox,
 } from "@/components/comic/types";
 
 export class OpenAIService {
@@ -89,6 +91,7 @@ export class OpenAIService {
       max_tokens?: number;
       model?: string;
       skipCache?: boolean;
+      responseFormat?: "json_object" | "text";
     } = {}
   ): Promise<string> {
     if (!this.client) {
@@ -98,8 +101,9 @@ export class OpenAIService {
     const {
       temperature = 0.7,
       max_tokens = 2000,
-      model = "gpt-4",
+      model = "gpt-4o",
       skipCache = false,
+      responseFormat = "text",
     } = options;
 
     // Check cache first (only in dev mode)
@@ -122,6 +126,7 @@ export class OpenAIService {
         ],
         temperature,
         max_tokens,
+        response_format: { type: responseFormat },
       });
 
       const content = response.choices[0]?.message?.content || "";
@@ -183,6 +188,30 @@ export class OpenAIService {
       return parsedResponse;
     } catch {
       throw new Error("Failed to parse comic panel response from OpenAI");
+    }
+  }
+
+  async generateSpeechForPanel(
+    imagePrompt: string,
+    skipCache: boolean = false
+  ) {
+    const response = await this.generateWithPrompt(
+      imagePrompt,
+      getGenerateSpeechForPanelSystemPrompt(),
+      {
+        temperature: 0.7,
+        max_tokens: 2000,
+        skipCache,
+        responseFormat: "json_object",
+      }
+    );
+
+    try {
+      console.log(response);
+      const parsedResponse = JSON.parse(response) as { text: TextBox[] };
+      return parsedResponse.text;
+    } catch {
+      throw new Error("Failed to parse speech box response from OpenAI");
     }
   }
 
