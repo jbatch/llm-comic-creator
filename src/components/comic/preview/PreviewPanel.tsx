@@ -2,6 +2,7 @@ import React from "react";
 import { Panel } from "../types";
 import SpeechBubble from "../../panel-editor/speech-bubbles/SpeechBubble";
 import { ComicPanel } from "@/types/comicPanelTypes";
+import { Pencil } from "lucide-react";
 
 interface PreviewPanelProps {
   panel: Panel;
@@ -23,6 +24,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     width: panel.width,
     height: panel.height * A4_ASPECT,
   };
+
+  // Add a scaling factor to match the speech tab view exactly
+  // The 0.65 factor was determined by comparing the visual sizes
+  const scale = (panel.width / 100) * 0.65;
 
   return (
     <div
@@ -58,26 +63,39 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             }}
           />
 
-          {/* Render speech bubbles */}
-          {image.text?.map((textBox, textIndex) => {
-            const position = image.textPositions?.[textIndex] || {
-              x: 50,
-              y: 50,
-              isFlipped: false,
-              tailPosition: { offset: 20, side: "bottom" },
-            };
-            return (
-              <SpeechBubble
-                key={textIndex}
-                textBox={textBox}
-                position={position}
-                onPositionChange={() => {}} // Read-only in preview
-              />
-            );
-          })}
+          {/* Speech bubbles container with refined scaling */}
+          <div
+            className="absolute inset-0"
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+              width: `${100 / scale}%`,
+              height: `${100 / scale}%`,
+            }}
+          >
+            {image.text?.map((textBox, textIndex) => {
+              const position = image.textPositions?.[textIndex] || {
+                x: 50,
+                y: 50,
+                isFlipped: false,
+                tailPosition: { offset: 20, side: "bottom" },
+              };
+              return (
+                <SpeechBubble
+                  key={textIndex}
+                  textBox={textBox}
+                  position={position}
+                  onPositionChange={() => {}} // Read-only in preview
+                  isPreview={true}
+                />
+              );
+            })}
+          </div>
 
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <span className="text-white text-sm">Click to adjust panel</span>
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-white/20 rounded-full">
+              <Pencil className="h-6 w-6 text-white" />
+            </div>
           </div>
         </div>
       ) : (

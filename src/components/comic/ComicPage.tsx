@@ -10,12 +10,12 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { exportToPDF } from "@/utils/pdfExport";
 import { toast } from "@/hooks/useToast";
 import { ComicPreview } from "./preview/ComicPreview";
 import { LayoutTemplate, PageData } from "./types";
 import { useComicPanels } from "@/context/ComicPanelContext";
 import { ComicPanel } from "@/types/comicPanelTypes";
+import { exportToPDF } from "@/utils/pdf/exportToPdf";
 
 interface LayoutPreviewProps {
   layout: LayoutTemplate;

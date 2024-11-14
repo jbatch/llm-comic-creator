@@ -9,30 +9,31 @@ interface SpeechBubbleProps {
   textBox: TextBox;
   position: TextPosition;
   onPositionChange: (position: TextPosition) => void;
+  isPreview?: boolean;
 }
 
-// Define snapping positions for each side
-const SNAP_POSITIONS = {
-  top: [15, 50, 85],
-  right: [15, 50, 85],
-  bottom: [15, 50, 85],
-  left: [15, 50, 85],
-};
+const SPEECH_BUBBLE_WIDTH = 200; // Fixed width in pixels
+const SPEECH_BUBBLE_PADDING = 12;
+const FONT_SIZE = 14;
+const LINE_HEIGHT = 1.4;
 
 const SpeechBubble: React.FC<SpeechBubbleProps> = ({
   textBox,
   position,
   onPositionChange,
+  isPreview = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
   const handleBubbleDragStart = (e: React.DragEvent) => {
+    if (isPreview) return;
     setIsDragging(true);
     e.dataTransfer.setData("text/plain", "");
   };
 
   const handleBubbleDrag = (e: React.DragEvent) => {
+    if (isPreview) return;
     if (e.clientX === 0 && e.clientY === 0) return;
     const container = e.currentTarget.parentElement;
     if (!container) return;
@@ -52,6 +53,7 @@ const SpeechBubble: React.FC<SpeechBubbleProps> = ({
     side: TailPosition["side"],
     offset: number
   ) => {
+    if (isPreview) return;
     onPositionChange({
       ...position,
       tailPosition: { side, offset },
@@ -59,6 +61,7 @@ const SpeechBubble: React.FC<SpeechBubbleProps> = ({
   };
 
   const handleFlip = () => {
+    if (isPreview) return;
     onPositionChange({
       ...position,
       isFlipped: !position.isFlipped,
@@ -67,8 +70,9 @@ const SpeechBubble: React.FC<SpeechBubbleProps> = ({
 
   // Render snapping points for a given side
   const renderSnappingPoints = (side: TailPosition["side"]) => {
+    if (isPreview) return null;
+
     const baseClasses = "absolute flex items-center justify-center";
-    const positions = SNAP_POSITIONS[side];
     const isActiveSide = position.tailPosition.side === side;
 
     const getPositionStyles = (offset: number): React.CSSProperties => {
@@ -84,7 +88,7 @@ const SpeechBubble: React.FC<SpeechBubbleProps> = ({
       }
     };
 
-    return positions.map((offset) => (
+    return [20, 50, 80].map((offset) => (
       <button
         key={`${side}-${offset}`}
         className={cn(
@@ -102,7 +106,28 @@ const SpeechBubble: React.FC<SpeechBubbleProps> = ({
     ));
   };
 
-  // Get tail SVG path and position
+  // Calculate tail path
+  const getTailPath = () => {
+    const tailSize = 12;
+    const { side } = position.tailPosition;
+
+    switch (side) {
+      case "bottom": {
+        return `M-0.5 0 L${tailSize - 0.5} 0 L${tailSize / 2} ${tailSize} Z`;
+      }
+      case "top": {
+        return `M${tailSize / 2} 0 L${tailSize} ${tailSize} L0 ${tailSize} Z`;
+      }
+      case "left": {
+        return `M${tailSize} 0 L${tailSize} ${tailSize} L0 ${tailSize / 2} Z`;
+      }
+      case "right": {
+        return `M0 0 L${tailSize} ${tailSize / 2} L0 ${tailSize} Z`;
+      }
+    }
+  };
+
+  // Get tail position styles
   const getTailStyles = () => {
     const { side, offset } = position.tailPosition;
     const styles: React.CSSProperties = {
@@ -111,55 +136,94 @@ const SpeechBubble: React.FC<SpeechBubbleProps> = ({
     };
 
     switch (side) {
-      case "bottom":
-        styles.bottom = "-11px"; // Move 1px closer
+      case "bottom": {
+        styles.bottom = "-11px";
         styles.left = `${offset}%`;
         styles.transform = "translateX(-50%)";
         break;
-      case "top":
-        styles.top = "-11px"; // Move 1px closer
+      }
+      case "top": {
+        styles.top = "-11px";
         styles.left = `${offset}%`;
         styles.transform = "translateX(-50%)";
         break;
-      case "left":
-        styles.left = "-11px"; // Move 1px closer
+      }
+      case "left": {
+        styles.left = "-11px";
         styles.top = `${offset}%`;
         styles.transform = "translateY(-50%)";
         break;
-      case "right":
-        styles.right = "-11px"; // Move 1px closer
+      }
+      case "right": {
+        styles.right = "-11px";
         styles.top = `${offset}%`;
         styles.transform = "translateY(-50%)";
         break;
+      }
     }
 
     return styles;
   };
 
-  const getTailPath = (side: TailPosition["side"]) => {
-    switch (side) {
-      case "bottom":
-        // Draw path with top side slightly extended
-        return "M-0.5 0 L12.5 0 L6 12 Z";
-      case "top":
-        // Draw path with bottom side slightly extended
-        return "M6 0 L12.5 12 L-0.5 12 Z";
-      case "left":
-        // Draw path with right side slightly extended
-        return "M12 -0.5 L12 12.5 L0 6 Z";
-      case "right":
-        // Draw path with left side slightly extended
-        return "M0 -0.5 L12 6 L0 12.5 Z";
-    }
+  const renderTail = () => {
+    if (textBox.type !== "SPEECH") return null;
+
+    const { side } = position.tailPosition;
+    const styles = getTailStyles();
+
+    // Create the connecting line path based on the side
+    const connectionPath = (() => {
+      switch (side) {
+        case "bottom": {
+          return "M0 0 L12 0";
+        }
+        case "top": {
+          return "M0 12 L12 12";
+        }
+        case "left": {
+          return "M12 0 L12 12";
+        }
+        case "right": {
+          return "M0 0 L0 12";
+        }
+      }
+    })();
+
+    return (
+      <div style={styles}>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          style={{
+            transform: position.isFlipped ? "scaleX(-1)" : "none",
+          }}
+        >
+          {/* White fill for tail */}
+          <path
+            d={getTailPath()}
+            fill="white"
+            stroke="#e5e7eb"
+            strokeWidth="1"
+          />
+          {/* White line to cover the stroke where tail meets bubble */}
+          <path d={connectionPath} stroke="white" strokeWidth="2" />
+        </svg>
+      </div>
+    );
   };
 
   return (
     <div
-      draggable
+      draggable={!isPreview}
       onDragStart={handleBubbleDragStart}
       onDrag={handleBubbleDrag}
       onDragEnd={() => setIsDragging(false)}
-      className={cn("absolute cursor-move", isDragging && "opacity-50")}
+      className={cn(
+        "absolute cursor-move",
+        isDragging && "opacity-50",
+        isPreview && "cursor-default"
+      )}
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,
@@ -167,20 +231,20 @@ const SpeechBubble: React.FC<SpeechBubbleProps> = ({
       }}
     >
       <div className="relative group" ref={bubbleRef}>
-        {/* Controls */}
-        <div className="absolute -top-8 left-0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="h-6 w-6"
-            onClick={handleFlip}
-          >
-            <FlipHorizontal className="h-4 w-4" />
-          </Button>
-        </div>
+        {!isPreview && (
+          <div className="absolute -top-8 left-0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleFlip}
+            >
+              <FlipHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
-        {/* Snapping points */}
-        {textBox.type === "SPEECH" && (
+        {textBox.type === "SPEECH" && !isPreview && (
           <>
             {renderSnappingPoints("top")}
             {renderSnappingPoints("right")}
@@ -189,67 +253,26 @@ const SpeechBubble: React.FC<SpeechBubbleProps> = ({
           </>
         )}
 
-        {/* Main bubble content */}
         <div
-          className={cn(
-            "bg-white border shadow-lg p-3 max-w-xs relative",
-            position.tailPosition.side === "bottom" && "rounded-t-lg",
-            position.tailPosition.side === "top" && "rounded-b-lg",
-            position.tailPosition.side === "left" && "rounded-r-lg",
-            position.tailPosition.side === "right" && "rounded-l-lg"
-          )}
+          className="bg-white border shadow-lg relative rounded-lg"
           style={{
             transform: position.isFlipped ? "scaleX(-1)" : "none",
+            width: SPEECH_BUBBLE_WIDTH,
+            padding: SPEECH_BUBBLE_PADDING,
           }}
         >
           <p
-            className="text-sm whitespace-pre-wrap"
+            className="whitespace-pre-wrap"
             style={{
               transform: position.isFlipped ? "scaleX(-1)" : "none",
+              fontSize: FONT_SIZE,
+              lineHeight: LINE_HEIGHT,
             }}
           >
             {textBox.text}
           </p>
         </div>
-
-        {/* Speech tail */}
-        {textBox.type === "SPEECH" && (
-          <div style={getTailStyles()}>
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              style={{
-                transform: position.isFlipped ? "scaleX(-1)" : "none",
-              }}
-            >
-              {/* Draw white background path slightly larger to create seamless connection */}
-              <path
-                d={getTailPath(position.tailPosition.side)}
-                fill="white"
-                stroke="#e5e7eb"
-                strokeWidth="1"
-              />
-              {/* Draw connecting edge in white to hide the border */}
-              <path
-                d={(() => {
-                  switch (position.tailPosition.side) {
-                    case "bottom":
-                      return "M0 0 L12 0";
-                    case "top":
-                      return "M0 12 L12 12";
-                    case "left":
-                      return "M12 0 L12 12";
-                    case "right":
-                      return "M0 0 L0 12";
-                  }
-                })()}
-                stroke="white"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-        )}
+        {renderTail()}
       </div>
     </div>
   );

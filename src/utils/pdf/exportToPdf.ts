@@ -1,67 +1,10 @@
-import { ComicPanel, CropSettings, PageData } from "@/components/comic/types";
+// src/utils/pdf/exportToPDF.ts
+import { PageData } from "@/components/comic/types";
+import { ExportToPDFOptions, DrawContext } from "./types";
+import { drawImageFill } from "./imageRenderer";
+import { drawSpeechBubble } from "./speechBubbles";
 import jsPDF from "jspdf";
-
-interface ExportToPDFOptions {
-  title?: string;
-  orientation: "portrait" | "landscape";
-}
-
-function drawImageFill(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  cropSettings?: CropSettings
-): Promise<void> {
-  return new Promise((resolve) => {
-    const imgAspect = img.width / img.height;
-    const targetAspect = width / height;
-
-    let sourceWidth = img.width;
-    let sourceHeight = img.height;
-    let sourceX = 0;
-    let sourceY = 0;
-
-    if (imgAspect > targetAspect) {
-      sourceWidth = Math.round(img.height * targetAspect);
-      if (cropSettings) {
-        sourceX = Math.round(
-          (img.width - sourceWidth) * cropSettings.position.x
-        );
-      } else {
-        sourceX = Math.round((img.width - sourceWidth) / 2);
-      }
-    } else if (imgAspect < targetAspect) {
-      sourceHeight = Math.round(img.width / targetAspect);
-      if (cropSettings) {
-        sourceY = Math.round(
-          (img.height - sourceHeight) * cropSettings.position.y
-        );
-      } else {
-        sourceY = Math.round((img.height - sourceHeight) / 2);
-      }
-    }
-
-    sourceX = Math.max(0, Math.min(sourceX, img.width - sourceWidth));
-    sourceY = Math.max(0, Math.min(sourceY, img.height - sourceHeight));
-
-    ctx.drawImage(
-      img,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      x,
-      y,
-      width,
-      height
-    );
-
-    resolve();
-  });
-}
+import { ComicPanel } from "@/types/comicPanelTypes";
 
 export async function exportToPDF(
   pages: PageData[],
@@ -157,6 +100,16 @@ export async function exportToPDF(
         const height =
           ((panel.height / 100) * usableHeight - panelPadding * 2) * mmToPoints;
 
+        const drawContext: DrawContext = {
+          ctx,
+          x,
+          y,
+          width,
+          height,
+          scale: panel.width / 100,
+          mmToPoints,
+        };
+
         if (panelData?.imageBase64) {
           const img = new Image();
           await new Promise<void>((resolve, reject) => {
@@ -165,15 +118,7 @@ export async function exportToPDF(
             img.src = `data:image/png;base64,${panelData.imageBase64}`;
           });
 
-          await drawImageFill(
-            ctx,
-            img,
-            x,
-            y,
-            width,
-            height,
-            panelData.cropSettings
-          );
+          await drawImageFill(drawContext, img, panelData.cropSettings);
         } else if (panelData?.imageUrl) {
           const img = new Image();
           img.crossOrigin = "anonymous";
@@ -183,15 +128,7 @@ export async function exportToPDF(
             img.src = panelData.imageUrl!;
           });
 
-          await drawImageFill(
-            ctx,
-            img,
-            x,
-            y,
-            width,
-            height,
-            panelData.cropSettings
-          );
+          await drawImageFill(drawContext, img, panelData.cropSettings);
         } else {
           ctx.fillStyle = "#f3f4f6";
           ctx.fillRect(x, y, width, height);
@@ -201,6 +138,16 @@ export async function exportToPDF(
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 1;
         ctx.strokeRect(x, y, width, height);
+
+        // Draw speech bubbles
+        if (panelData?.text && panelData.textPositions) {
+          panelData.text.forEach((textBox, textIndex) => {
+            const position = panelData.textPositions?.[textIndex];
+            if (position) {
+              drawSpeechBubble(drawContext, textBox, position);
+            }
+          });
+        }
       }
 
       // Add the page to PDF with mm units
