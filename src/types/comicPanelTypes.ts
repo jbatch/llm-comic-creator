@@ -17,7 +17,8 @@ export interface ComicPanel {
   cropSettings?: CropSettings;
 }
 
-export type ComicPanelState = {
+export type ComicState = {
+  storyContent: string;
   panels: ComicPanel[];
   isLoading: boolean;
   error: string | null;
@@ -36,6 +37,7 @@ export type TextPosition = {
 };
 
 export type ComicPanelAction =
+  | { type: "SET_STORY"; payload: string }
   | { type: "SET_PANELS"; payload: ComicPanel[] }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }

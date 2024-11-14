@@ -7,10 +7,17 @@ import { PromptInput, Instructions, MarkdownPreview } from ".";
 import { useApiKey } from "../../hooks/useApiKey";
 import { useToast } from "../../hooks/useToast";
 import { OpenAIService } from "../../services/openai";
+import {
+  useComicPanelActions,
+  useComicPanels,
+} from "@/context/ComicPanelContext";
 
 const PromptPage: React.FC = () => {
+  const {
+    state: { storyContent },
+  } = useComicPanels();
+  const { setStoryContent } = useComicPanelActions();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { getApiKeys, hasApiKeys } = useApiKey();
   const navigate = useNavigate();
@@ -38,7 +45,7 @@ const PromptPage: React.FC = () => {
     try {
       const openai = new OpenAIService(apiKey);
       const content = await openai.generateStoryOutline(prompt);
-      setGeneratedContent(content);
+      setStoryContent(content);
     } catch (err) {
       const errorMessage =
         err instanceof Error
@@ -57,13 +64,13 @@ const PromptPage: React.FC = () => {
   };
 
   const handlePanelGeneration = () => {
-    if (generatedContent) {
-      navigate("/panels", { state: { content: generatedContent } });
+    if (storyContent) {
+      navigate("/panels");
     }
   };
 
   const handleSaveContent = (newContent: string) => {
-    setGeneratedContent(newContent);
+    setStoryContent(newContent);
     toast({
       title: "Changes saved",
       description: "Your edited content has been saved.",
@@ -101,14 +108,14 @@ const PromptPage: React.FC = () => {
       <div className="w-1/2 p-4 bg-gray-50 border-l overflow-hidden flex flex-col">
         <div className="flex-grow overflow-hidden">
           <MarkdownPreview
-            content={generatedContent}
+            content={storyContent}
             isLoading={isLoading}
             onSave={handleSaveContent}
           />
         </div>
 
         {/* Action buttons */}
-        {generatedContent && !isLoading && (
+        {storyContent && !isLoading && (
           <div className="mt-4 flex justify-end">
             <Button
               onClick={handlePanelGeneration}

@@ -3,7 +3,7 @@ import { FlipHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextBox } from "@/components/comic/types";
 import { TextPosition, TailPosition } from "@/types/comicPanelTypes";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/classNameMerge";
 
 interface SpeechBubbleProps {
   textBox: TextBox;

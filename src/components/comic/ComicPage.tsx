@@ -9,7 +9,7 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/classNameMerge";
 import { toast } from "@/hooks/useToast";
 import { ComicPreview } from "./preview/ComicPreview";
 import { LayoutTemplate, PageData } from "./types";

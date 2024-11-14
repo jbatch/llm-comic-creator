@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,11 @@ import { ImageCropper } from "./image-cropper/ImageCropper";
 import { LoaderCircle, Image, MessageSquare, Wand2 } from "lucide-react";
 import { CropSettings, TextBox } from "../comic/types";
 import SpeechBubblesTab from "./speech-bubbles/SpeechBubblesTab";
-import { OpenAIService } from "@/services/openai";
-import { useNavigate } from "react-router-dom";
-import { useApiKey } from "@/hooks/useApiKey";
 import {
   useComicPanels,
   useComicPanelActions,
 } from "@/context/ComicPanelContext";
+import { useOpenAi } from "@/hooks/useOpenAi";
 
 interface PanelEditorDialogProps {
   open: boolean;
@@ -28,25 +26,16 @@ export const PanelEditorDialog: React.FC<PanelEditorDialogProps> = ({
   panelIndex,
   aspectRatio,
 }) => {
+  const { getOpenAiService } = useOpenAi();
+  const { updatePanel, appendText } = useComicPanelActions();
   const [activeTab, setActiveTab] = useState("crop");
   const [isGenerating, setIsGenerating] = useState(false);
+
   const {
     state: { panels },
   } = useComicPanels();
-  const { updatePanel, appendText } = useComicPanelActions();
-  const { getApiKeys } = useApiKey();
-  const navigate = useNavigate();
 
   const panel = panels[panelIndex];
-
-  const getOpenAIService = useCallback(() => {
-    const apiKey = getApiKeys()?.openAi;
-    if (!apiKey) {
-      navigate("/settings");
-      return null;
-    }
-    return new OpenAIService(apiKey);
-  }, [getApiKeys, navigate]);
 
   if (!panel?.imageUrl) return null;
 
@@ -55,7 +44,7 @@ export const PanelEditorDialog: React.FC<PanelEditorDialogProps> = ({
   };
 
   const handleGenerateSpeech = async () => {
-    const openAi = getOpenAIService();
+    const openAi = getOpenAiService();
     if (!openAi) {
       throw new Error("Could not get open ai service");
     }
@@ -69,7 +58,7 @@ export const PanelEditorDialog: React.FC<PanelEditorDialogProps> = ({
   };
 
   const handleGenerateNarration = async () => {
-    const openAi = getOpenAIService();
+    const openAi = getOpenAiService();
     if (!openAi) {
       throw new Error("Could not get open ai service");
     }

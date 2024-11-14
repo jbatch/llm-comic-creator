@@ -1,29 +1,24 @@
 import React, { useEffect, useCallback, useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { OpenAIService } from "../../services/openai";
-import { useApiKey } from "../../hooks/useApiKey";
 import { useToast } from "../../hooks/useToast";
 import PanelBreadcrumb from "./PanelBreadcrumb";
 import PanelGrid from "./PanelGrid";
 import { BookOpen } from "lucide-react";
 import { CharacterDescriptions } from "../comic/types";
-import { LeonardoService } from "@/services/leonardo";
 import {
   useComicPanels,
   useComicPanelActions,
 } from "@/context/ComicPanelContext";
+import { useOpenAi } from "@/hooks/useOpenAi";
+import { useLeonardo } from "@/hooks/useLeonardo";
 
 const PanelPage: React.FC = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getApiKeys } = useApiKey();
-  const storyContent = location.state?.content;
 
-  // Replace useState with context
   const {
-    state: { panels, isLoading, error },
+    state: { storyContent, panels, isLoading, error },
   } = useComicPanels();
   const {
     setPanels,
@@ -31,34 +26,20 @@ const PanelPage: React.FC = () => {
     generateImageSuccess,
     generateImageError,
   } = useComicPanelActions();
+  const { getOpenAiService } = useOpenAi();
+  const { getLeonardoService } = useLeonardo();
 
   const [characters, setCharacters] = useState<CharacterDescriptions>({});
 
-  const getOpenAIService = useCallback(() => {
-    const apiKey = getApiKeys()?.openAi;
-    if (!apiKey) {
-      navigate("/settings");
-      return null;
-    }
-    return new OpenAIService(apiKey);
-  }, [getApiKeys, navigate]);
-
-  const getLeonardoService = useCallback(() => {
-    const apiKey = getApiKeys()?.leonardo;
-    if (!apiKey) {
-      navigate("/settings");
-      return null;
-    }
-    return new LeonardoService(apiKey);
-  }, [getApiKeys, navigate]);
-
   const generatePanels = useCallback(async () => {
-    const openai = getOpenAIService();
+    if (panels.length > 0) {
+      return;
+    }
+    const openai = getOpenAiService();
     if (!openai || !storyContent) return;
 
     try {
       const response = await openai.generateComicPanels(storyContent);
-      console.log({ response });
       setPanels(response.panels);
       setCharacters(response.characters);
     } catch (err) {
@@ -73,7 +54,14 @@ const PanelPage: React.FC = () => {
         description: errorMessage,
       });
     }
-  }, [getOpenAIService, storyContent, toast, setPanels, generateImageError]);
+  }, [
+    panels.length,
+    getOpenAiService,
+    storyContent,
+    setPanels,
+    generateImageError,
+    toast,
+  ]);
 
   useEffect(() => {
     if (!storyContent) {
@@ -85,6 +73,7 @@ const PanelPage: React.FC = () => {
   }, [storyContent, generatePanels, navigate]);
 
   const handleRegeneratePanels = () => {
+    setPanels([]);
     generatePanels();
   };
 
@@ -106,7 +95,6 @@ const PanelPage: React.FC = () => {
 
     try {
       const promptWithCharacters = charactersInScene + "\n" + panel.imagePrompt;
-      console.log("Generating", { panel, promptWithCharacters });
       const { imageUrl, imageBase64 } =
         await imageGenerationService.generateImage(
           promptWithCharacters,

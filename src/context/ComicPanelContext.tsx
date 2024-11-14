@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useReducer, useMemo } from "react";
 import { comicPanelReducer, initialState } from "../reducers/comicPanelReducer";
 import {
-  ComicPanelState,
+  ComicState,
   ComicPanelAction,
   TailPosition,
   ComicPanel,
@@ -11,7 +11,7 @@ import {
 import { TextBox } from "@/components/comic/types";
 
 type ComicPanelContextType = {
-  state: ComicPanelState;
+  state: ComicState;
   dispatch: React.Dispatch<ComicPanelAction>;
 };
 
@@ -41,6 +41,7 @@ export function ComicPanelProvider({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useComicPanels() {
   const context = useContext(ComicPanelContext);
   if (context === undefined) {
@@ -49,12 +50,15 @@ export function useComicPanels() {
   return context;
 }
 
-// Helper hooks for common operations
+// eslint-disable-next-line react-refresh/only-export-components
 export function useComicPanelActions() {
   const { dispatch } = useComicPanels();
 
   return useMemo(
     () => ({
+      setStoryContent: (storyContent: string) =>
+        dispatch({ type: "SET_STORY", payload: storyContent }),
+
       setPanels: (panels: ComicPanel[]) =>
         dispatch({ type: "SET_PANELS", payload: panels }),
 

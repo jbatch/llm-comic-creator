@@ -1,18 +1,24 @@
 // src/reducers/comicPanelReducer.ts
 
-import { ComicPanelState, ComicPanelAction } from "../types/comicPanelTypes";
+import { ComicState, ComicPanelAction } from "../types/comicPanelTypes";
 
-export const initialState: ComicPanelState = {
+export const initialState: ComicState = {
+  storyContent: "",
   panels: [],
   isLoading: false,
   error: null,
 };
 
 export function comicPanelReducer(
-  state: ComicPanelState,
+  state: ComicState,
   action: ComicPanelAction
-): ComicPanelState {
+): ComicState {
   switch (action.type) {
+    case "SET_STORY":
+      return {
+        ...state,
+        storyContent: action.payload,
+      };
     case "SET_PANELS":
       return {
         ...state,

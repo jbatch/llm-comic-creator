@@ -146,7 +146,6 @@ export class OpenAICache {
   async setImage(prompt: string, image: ImageData): Promise<void> {
     const cache = await caches.open(this.IMAGE_CACHE_KEY);
     const key = this.generateImageCacheKey(prompt);
-    console.log("saving image to cache", { key });
     await cache.put(
       key,
       new Response(JSON.stringify(image), {

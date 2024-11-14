@@ -207,7 +207,6 @@ export class OpenAIService {
     );
 
     try {
-      console.log(response);
       const parsedResponse = JSON.parse(response) as { text: TextBox[] };
       return parsedResponse.text;
     } catch {
