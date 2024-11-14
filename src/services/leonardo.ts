@@ -1,11 +1,12 @@
 // src/services/leonardo.ts
 import { Leonardo } from "@leonardo-ai/sdk";
 import { openAICache } from "./cache";
-import { ComicPanel, PanelShape } from "@/components/comic/types";
+import { PanelShape } from "@/components/comic/types";
 import {
   JobStatus,
   SdGenerationStyle,
 } from "@leonardo-ai/sdk/sdk/models/shared";
+import { ComicPanel } from "@/types/comicPanelTypes";
 
 export class LeonardoService {
   private client: Leonardo | null = null;
@@ -43,14 +44,24 @@ export class LeonardoService {
 
     try {
       const response = await this.client.image.createGeneration({
-        modelId: "6b645e3a-d64f-4341-a6d8-7a3690fbf042",
-        prompt: `An illustration in a detailed and vibrant illustration style with bold outlines and dynamic, high-contrast shading: ${prompt}`,
+        modelId: "6b645e3a-d64f-4341-a6d8-7a3690fbf042", // Leonardo Pheonix
+        // modelId: "aa77f04e-3eec-4034-9c07-d0f619684628", //Leonardo Kino XL
+        prompt: `${prompt}`,
         numImages: 1,
         width,
         height,
         presetStyle: SdGenerationStyle.Illustration,
-        alchemy: false,
+        // presetStyle: SdGenerationStyle.Illustration,
+        alchemy: true,
         negativePrompt: "speech bubble",
+        // controlnets: [
+        //   {
+        //     initImageId: "3c0bd04b-4aa5-47ac-9394-37ea1409446a",
+        //     preprocessorId: 67, // Style reference id
+        //     strengthType: StrengthType.High,
+        //     initImageType: InitImageType.Generated,
+        //   },
+        // ],
       });
 
       // Poll until generation complete
@@ -101,7 +112,7 @@ export class LeonardoService {
   getShape(panelShape: PanelShape) {
     switch (panelShape) {
       case "SQUARE":
-        return { width: 512, height: 512 };
+        return { width: 1120, height: 1120 };
       case "PORTRAIT":
         return { width: 512, height: 896 };
       case "LANDSCAPE":

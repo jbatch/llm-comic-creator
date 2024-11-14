@@ -39,7 +39,8 @@ const PanelPage: React.FC = () => {
     if (!openai || !storyContent) return;
 
     try {
-      const response = await openai.generateComicPanels(storyContent);
+      // const response = await openai.generateComicPanels(storyContent);
+      const response = await openai.generateComicPanels2(storyContent);
       setPanels(response.panels);
       setCharacters(response.characters);
     } catch (err) {
@@ -62,6 +63,7 @@ const PanelPage: React.FC = () => {
     generateImageError,
     toast,
   ]);
+  console.log({ panels, characters });
 
   useEffect(() => {
     if (!storyContent) {
@@ -94,7 +96,8 @@ const PanelPage: React.FC = () => {
     generateImageStart(panelIndex);
 
     try {
-      const promptWithCharacters = charactersInScene + "\n" + panel.imagePrompt;
+      let promptWithCharacters = charactersInScene + "\n" + panel.imagePrompt;
+      promptWithCharacters = panel.imagePrompt;
       const { imageUrl, imageBase64 } =
         await imageGenerationService.generateImage(
           promptWithCharacters,

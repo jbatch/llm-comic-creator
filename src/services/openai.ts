@@ -1,7 +1,9 @@
 // src/services/openai.ts
 import OpenAI from "openai";
 import {
+  getCharacterDescriptionsSystemPrompt,
   getGenerateComicPanelsSystemPrompt,
+  getGenerateComicPanelsSystemPrompt2,
   getGenerateSpeechForPanelSystemPrompt,
   SystemPrompt,
 } from "../config/prompts";
@@ -186,6 +188,61 @@ export class OpenAIService {
         panels: ComicPanel[];
       };
       return parsedResponse;
+    } catch {
+      throw new Error("Failed to parse comic panel response from OpenAI");
+    }
+  }
+
+  async generateComicPanels2(
+    storyContent: string,
+    skipCache = false
+  ): Promise<{
+    characters: CharacterDescriptions;
+    panels: ComicPanel[];
+  }> {
+    const comicPanelsResponsePromise = this.generateWithPrompt(
+      storyContent,
+      getGenerateComicPanelsSystemPrompt2(),
+      {
+        temperature: 0.7,
+        max_tokens: 4000,
+        skipCache,
+        responseFormat: "json_object",
+      }
+    );
+
+    const charactersResponsePromise = this.generateWithPrompt(
+      storyContent,
+      getCharacterDescriptionsSystemPrompt(),
+      {
+        temperature: 0.7,
+        max_tokens: 2000,
+        skipCache,
+        responseFormat: "json_object",
+      }
+    );
+
+    const [comicPanelsResponse, charactersResponse] = await Promise.all([
+      comicPanelsResponsePromise,
+      charactersResponsePromise,
+    ]);
+
+    try {
+      const parsedComicPanelsResponse = JSON.parse(comicPanelsResponse) as {
+        chapters: { chapterTitle: string; scenes: { scenePrompt: string }[] }[];
+      };
+      const { characters } = JSON.parse(charactersResponse) as {
+        characters: CharacterDescriptions;
+      };
+      const panels: ComicPanel[] = parsedComicPanelsResponse.chapters
+        .map((chapter) =>
+          chapter.scenes.map((scene) => ({
+            imagePrompt: scene.scenePrompt,
+            panelShape: "SQUARE" as const,
+          }))
+        )
+        .flat();
+      return { characters, panels };
     } catch {
       throw new Error("Failed to parse comic panel response from OpenAI");
     }
