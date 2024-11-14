@@ -1,6 +1,21 @@
 // src/types/comicPanelTypes.ts
 
-import { type ComicPanel, type TextBox } from "@/components/comic/types";
+import {
+  CropSettings,
+  PanelShape,
+  type TextBox,
+} from "@/components/comic/types";
+
+export interface ComicPanel {
+  imagePrompt: string;
+  text?: TextBox[];
+  textPositions?: TextPosition[];
+  panelShape: PanelShape;
+  imageUrl?: string;
+  imageBase64?: string;
+  isGenerating?: boolean;
+  cropSettings?: CropSettings;
+}
 
 export type ComicPanelState = {
   panels: ComicPanel[];
@@ -8,15 +23,16 @@ export type ComicPanelState = {
   error: string | null;
 };
 
+export type TailPosition = {
+  side: "top" | "right" | "bottom" | "left";
+  offset: number; // Percentage along the side (0-100)
+};
+
 export type TextPosition = {
   x: number;
   y: number;
   isFlipped: boolean;
-};
-
-// Extend ComicPanel type with text positions
-export type ExtendedComicPanel = ComicPanel & {
-  textPositions?: TextPosition[];
+  tailPosition: TailPosition;
 };
 
 export type ComicPanelAction =
@@ -25,7 +41,7 @@ export type ComicPanelAction =
   | { type: "SET_ERROR"; payload: string | null }
   | {
       type: "UPDATE_PANEL";
-      payload: { index: number; updates: Partial<ExtendedComicPanel> };
+      payload: { index: number; updates: Partial<ComicPanel> };
     }
   | {
       type: "UPDATE_TEXT_POSITION";

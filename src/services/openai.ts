@@ -8,10 +8,10 @@ import {
 import { openAICache } from "./cache";
 import {
   CharacterDescriptions,
-  ComicPanel,
   PanelShape,
   TextBox,
 } from "@/components/comic/types";
+import { ComicPanel } from "@/types/comicPanelTypes";
 
 export class OpenAIService {
   private client: OpenAI | null = null;

@@ -108,12 +108,17 @@ export function comicPanelReducer(
                       x: 50,
                       y: 50,
                       isFlipped: false,
+                      tailPosition: {
+                        side: "bottom",
+                        offset: 20, // Default 20% from the left/top of the side
+                      },
                     }
                 ),
               }
             : panel
         ),
       };
+
     case "APPEND_TEXT":
       return {
         ...state,
@@ -126,13 +131,16 @@ export function comicPanelReducer(
           return {
             ...panel,
             text: newText,
-            // Initialize positions for new text entries
             textPositions: newText.map(
               (_, i) =>
                 (panel.textPositions && panel.textPositions[i]) || {
                   x: 50,
                   y: 50,
                   isFlipped: false,
+                  tailPosition: {
+                    side: "bottom",
+                    offset: 20,
+                  },
                 }
             ),
           };

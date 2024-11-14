@@ -5,7 +5,8 @@ import { comicPanelReducer, initialState } from "../reducers/comicPanelReducer";
 import {
   ComicPanelState,
   ComicPanelAction,
-  ExtendedComicPanel,
+  TailPosition,
+  ComicPanel,
 } from "../types/comicPanelTypes";
 import { TextBox } from "@/components/comic/types";
 
@@ -54,16 +55,21 @@ export function useComicPanelActions() {
 
   return useMemo(
     () => ({
-      setPanels: (panels: ExtendedComicPanel[]) =>
+      setPanels: (panels: ComicPanel[]) =>
         dispatch({ type: "SET_PANELS", payload: panels }),
 
-      updatePanel: (index: number, updates: Partial<ExtendedComicPanel>) =>
+      updatePanel: (index: number, updates: Partial<ComicPanel>) =>
         dispatch({ type: "UPDATE_PANEL", payload: { index, updates } }),
 
       updateTextPosition: (
         panelIndex: number,
         textIndex: number,
-        position: { x: number; y: number; isFlipped: boolean }
+        position: {
+          x: number;
+          y: number;
+          isFlipped: boolean;
+          tailPosition: TailPosition;
+        }
       ) =>
         dispatch({
           type: "UPDATE_TEXT_POSITION",
@@ -89,7 +95,7 @@ export function useComicPanelActions() {
           payload: { index, error },
         }),
 
-      updateText: (panelIndex: number, text: ExtendedComicPanel["text"]) =>
+      updateText: (panelIndex: number, text: ComicPanel["text"]) =>
         dispatch({
           type: "UPDATE_TEXT",
           payload: { panelIndex, text: text || [] },

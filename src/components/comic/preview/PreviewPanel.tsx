@@ -1,11 +1,11 @@
 import React from "react";
 import { Panel } from "../types";
-import { type ExtendedComicPanel } from "@/types/comicPanelTypes";
 import SpeechBubble from "../../panel-editor/speech-bubbles/SpeechBubble";
+import { ComicPanel } from "@/types/comicPanelTypes";
 
 interface PreviewPanelProps {
   panel: Panel;
-  image?: ExtendedComicPanel;
+  image?: ComicPanel;
   imageIndex: number;
   onClick: () => void;
 }
@@ -64,6 +64,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
               x: 50,
               y: 50,
               isFlipped: false,
+              tailPosition: { offset: 20, side: "bottom" },
             };
             return (
               <SpeechBubble

@@ -27,7 +27,6 @@ const PanelPage: React.FC = () => {
   } = useComicPanels();
   const {
     setPanels,
-    updatePanel,
     generateImageStart,
     generateImageSuccess,
     generateImageError,

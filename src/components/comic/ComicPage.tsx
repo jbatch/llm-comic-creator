@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
 import { exportToPDF } from "@/utils/pdfExport";
 import { toast } from "@/hooks/useToast";
 import { ComicPreview } from "./preview/ComicPreview";
-import { ComicPanel, LayoutTemplate, PageData } from "./types";
+import { LayoutTemplate, PageData } from "./types";
 import { useComicPanels } from "@/context/ComicPanelContext";
+import { ComicPanel } from "@/types/comicPanelTypes";
 
 interface LayoutPreviewProps {
   layout: LayoutTemplate;
@@ -370,7 +371,6 @@ const ComicPage: React.FC = () => {
               {pages[currentPage] && (
                 <ComicPreview
                   layout={pages[currentPage].layout}
-                  panels={panels}
                   startIndex={pages[currentPage].startIndex}
                   pageIndex={currentPage}
                   orientation={orientation}

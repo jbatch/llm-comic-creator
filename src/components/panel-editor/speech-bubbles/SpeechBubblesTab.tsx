@@ -14,6 +14,7 @@ import {
   useComicPanels,
   useComicPanelActions,
 } from "@/context/ComicPanelContext";
+import { TextPosition } from "@/types/comicPanelTypes";
 
 interface SpeechBubblesTabProps {
   panelIndex: number;
@@ -49,10 +50,7 @@ const SpeechBubblesTab: React.FC<SpeechBubblesTabProps> = ({
   const text = panel.text || [];
   const textPositions = panel.textPositions || [];
 
-  const handlePositionChange = (
-    textIndex: number,
-    position: { x: number; y: number; isFlipped: boolean }
-  ) => {
+  const handlePositionChange = (textIndex: number, position: TextPosition) => {
     updateTextPosition(panelIndex, textIndex, position);
   };
 
@@ -193,7 +191,12 @@ const SpeechBubblesTab: React.FC<SpeechBubblesTabProps> = ({
                 key={index}
                 textBox={textBox}
                 position={
-                  textPositions[index] || { x: 50, y: 50, isFlipped: false }
+                  textPositions[index] || {
+                    x: 50,
+                    y: 50,
+                    isFlipped: false,
+                    tailPosition: { offset: 20, side: "bottom" },
+                  }
                 }
                 onPositionChange={(newPosition) =>
                   handlePositionChange(index, newPosition)
