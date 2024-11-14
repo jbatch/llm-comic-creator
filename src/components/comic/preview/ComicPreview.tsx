@@ -1,35 +1,32 @@
-// src/components/comic/preview/ComicPreview.tsx
 import React, { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
-import { Panel, type ComicPanel, type LayoutTemplate } from "../types";
+import { Panel, type LayoutTemplate } from "../types";
 import { PreviewPanel } from "./PreviewPanel";
 import { usePreviewDimensions } from "./usePreviewDimensions";
 import { PanelEditorDialog } from "../../panel-editor/PanelEditorDialog";
+import { useComicPanels } from "@/context/ComicPanelContext";
 
 interface ComicPreviewProps {
   layout: LayoutTemplate;
-  panels: ComicPanel[];
   startIndex: number;
   pageIndex: number;
   orientation: "portrait" | "landscape";
-  onUpdatePanel?: (panelIndex: number, updates: Partial<ComicPanel>) => void;
 }
 
 export const ComicPreview: React.FC<ComicPreviewProps> = ({
   layout,
-  panels,
   startIndex,
   pageIndex,
   orientation,
-  onUpdatePanel,
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { dimensions } = usePreviewDimensions(wrapperRef, orientation);
-  const [selectedPanel, setSelectedPanel] = useState<{
-    index: number;
-    aspectRatio: number;
-    panel: ComicPanel;
-  } | null>(null);
+  const [selectedPanelIndex, setSelectedPanelIndex] = useState<number | null>(
+    null
+  );
+  const {
+    state: { panels },
+  } = useComicPanels();
 
   const getPanelAspectRatio = (panel: Panel): number => {
     const panelWidth = (panel.width / 100) * dimensions.width;
@@ -37,23 +34,12 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
     return panelWidth / panelHeight;
   };
 
-  const handlePanelClick = (panelIndex: number, panel: Panel) => {
+  const handlePanelClick = (panelIndex: number) => {
     const imageIndex = startIndex + panelIndex;
     const comicPanel = panels[imageIndex];
 
     if (comicPanel?.imageUrl) {
-      setSelectedPanel({
-        index: imageIndex,
-        aspectRatio: getPanelAspectRatio(panel),
-        panel: comicPanel,
-      });
-    }
-  };
-
-  const handleUpdatePanel = (updates: Partial<ComicPanel>) => {
-    console.log("handleUpdatePanel", { selectedPanel, onUpdatePanel });
-    if (selectedPanel && onUpdatePanel) {
-      onUpdatePanel(selectedPanel.index, updates);
+      setSelectedPanelIndex(imageIndex);
     }
   };
 
@@ -78,19 +64,26 @@ export const ComicPreview: React.FC<ComicPreviewProps> = ({
               panel={panel}
               image={panels[startIndex + index]}
               imageIndex={startIndex + index}
-              onClick={() => handlePanelClick(index, panel)}
+              onClick={() => handlePanelClick(index)}
             />
           ))}
         </div>
       </Card>
 
-      <PanelEditorDialog
-        open={selectedPanel !== null}
-        onOpenChange={(open) => !open && setSelectedPanel(null)}
-        panel={selectedPanel?.panel ?? null}
-        aspectRatio={selectedPanel?.aspectRatio ?? 1}
-        onUpdatePanel={handleUpdatePanel}
-      />
+      {selectedPanelIndex !== null && (
+        <PanelEditorDialog
+          open={selectedPanelIndex !== null}
+          onOpenChange={(open) => !open && setSelectedPanelIndex(null)}
+          panelIndex={selectedPanelIndex}
+          aspectRatio={
+            selectedPanelIndex !== null
+              ? getPanelAspectRatio(
+                  layout.panels[selectedPanelIndex - startIndex]
+                )
+              : 1
+          }
+        />
+      )}
     </>
   );
 };

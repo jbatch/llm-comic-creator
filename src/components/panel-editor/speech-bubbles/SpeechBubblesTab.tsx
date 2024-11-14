@@ -1,5 +1,4 @@
 import React from "react";
-import { TextBox } from "@/components/comic/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,11 +9,16 @@ import {
   LoaderCircle,
   Quote,
 } from "lucide-react";
+import SpeechBubble from "./SpeechBubble";
+import {
+  useComicPanels,
+  useComicPanelActions,
+} from "@/context/ComicPanelContext";
 
 interface SpeechBubblesTabProps {
+  panelIndex: number;
   imageUrl: string;
   imagePrompt: string;
-  text?: TextBox[];
   aspectRatio: number;
   cropSettings?: {
     position: {
@@ -25,20 +29,38 @@ interface SpeechBubblesTabProps {
   isGenerating?: boolean;
   onGenerateSpeech?: () => Promise<void>;
   onGenerateNarration?: () => Promise<void>;
-  onRemoveText?: (index: number) => void;
 }
 
 const SpeechBubblesTab: React.FC<SpeechBubblesTabProps> = ({
+  panelIndex,
   imageUrl,
   imagePrompt,
-  text = [],
   aspectRatio,
   cropSettings,
   isGenerating = false,
   onGenerateSpeech,
   onGenerateNarration,
-  onRemoveText,
 }) => {
+  const {
+    state: { panels },
+  } = useComicPanels();
+  const { updateText, updateTextPosition } = useComicPanelActions();
+  const panel = panels[panelIndex];
+  const text = panel.text || [];
+  const textPositions = panel.textPositions || [];
+
+  const handlePositionChange = (
+    textIndex: number,
+    position: { x: number; y: number; isFlipped: boolean }
+  ) => {
+    updateTextPosition(panelIndex, textIndex, position);
+  };
+
+  const onRemoveText = (index: number) => {
+    const newText = text.filter((_, i) => i !== index);
+    updateText(panelIndex, newText);
+  };
+
   return (
     <div className="grid grid-cols-2 h-[500px]">
       {/* Left Column - Controls */}
@@ -164,6 +186,20 @@ const SpeechBubblesTab: React.FC<SpeechBubblesTabProps> = ({
                   : "50% 50%",
               }}
             />
+
+            {/* Overlay speech bubbles */}
+            {text.map((textBox, index) => (
+              <SpeechBubble
+                key={index}
+                textBox={textBox}
+                position={
+                  textPositions[index] || { x: 50, y: 50, isFlipped: false }
+                }
+                onPositionChange={(newPosition) =>
+                  handlePositionChange(index, newPosition)
+                }
+              />
+            ))}
           </div>
         </div>
       </div>

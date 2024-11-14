@@ -1,10 +1,11 @@
-// src/components/comic/preview/PreviewPanel.tsx
 import React from "react";
-import { ComicPanel, Panel } from "../types";
+import { Panel } from "../types";
+import { type ExtendedComicPanel } from "@/types/comicPanelTypes";
+import SpeechBubble from "../../panel-editor/speech-bubbles/SpeechBubble";
 
 interface PreviewPanelProps {
   panel: Panel;
-  image?: ComicPanel;
+  image?: ExtendedComicPanel;
   imageIndex: number;
   onClick: () => void;
 }
@@ -36,7 +37,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     >
       {image?.imageUrl ? (
         <div
-          className="w-full h-full overflow-hidden cursor-pointer group"
+          className="w-full h-full overflow-hidden cursor-pointer group relative"
           onClick={onClick}
           style={{
             backgroundColor: "#fff",
@@ -56,8 +57,26 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 : "50% 50%",
             }}
           />
+
+          {/* Render speech bubbles */}
+          {image.text?.map((textBox, textIndex) => {
+            const position = image.textPositions?.[textIndex] || {
+              x: 50,
+              y: 50,
+              isFlipped: false,
+            };
+            return (
+              <SpeechBubble
+                key={textIndex}
+                textBox={textBox}
+                position={position}
+                onPositionChange={() => {}} // Read-only in preview
+              />
+            );
+          })}
+
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <span className="text-white text-sm">Click to adjust crop</span>
+            <span className="text-white text-sm">Click to adjust panel</span>
           </div>
         </div>
       ) : (

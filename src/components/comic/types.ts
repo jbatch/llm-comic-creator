@@ -20,6 +20,11 @@ export type TextBox = {
 export interface ComicPanel {
   imagePrompt: string;
   text?: TextBox[];
+  textPositions?: {
+    x: number;
+    y: number;
+    isFlipped: boolean;
+  }[];
   panelShape: PanelShape;
   imageUrl?: string;
   imageBase64?: string;

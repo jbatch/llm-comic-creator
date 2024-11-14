@@ -1,17 +1,18 @@
-// src/components/panel/PanelPage.tsx
-
-import React, { useEffect, useState, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useCallback, useState } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { OpenAIService } from "../../services/openai";
 import { useApiKey } from "../../hooks/useApiKey";
 import { useToast } from "../../hooks/useToast";
 import PanelBreadcrumb from "./PanelBreadcrumb";
 import PanelGrid from "./PanelGrid";
-import { Link } from "react-router-dom";
 import { BookOpen } from "lucide-react";
-import { CharacterDescriptions, ComicPanel } from "../comic/types";
+import { CharacterDescriptions } from "../comic/types";
 import { LeonardoService } from "@/services/leonardo";
+import {
+  useComicPanels,
+  useComicPanelActions,
+} from "@/context/ComicPanelContext";
 
 const PanelPage: React.FC = () => {
   const location = useLocation();
@@ -20,12 +21,20 @@ const PanelPage: React.FC = () => {
   const { getApiKeys } = useApiKey();
   const storyContent = location.state?.content;
 
-  const [panels, setPanels] = useState<ComicPanel[]>([]);
-  const [characters, setCharacters] = useState<CharacterDescriptions>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Replace useState with context
+  const {
+    state: { panels, isLoading, error },
+  } = useComicPanels();
+  const {
+    setPanels,
+    updatePanel,
+    generateImageStart,
+    generateImageSuccess,
+    generateImageError,
+  } = useComicPanelActions();
 
-  // Create a memoized function to get the OpenAI service
+  const [characters, setCharacters] = useState<CharacterDescriptions>({});
+
   const getOpenAIService = useCallback(() => {
     const apiKey = getApiKeys()?.openAi;
     if (!apiKey) {
@@ -48,9 +57,6 @@ const PanelPage: React.FC = () => {
     const openai = getOpenAIService();
     if (!openai || !storyContent) return;
 
-    setIsLoading(true);
-    setError(null);
-
     try {
       const response = await openai.generateComicPanels(storyContent);
       console.log({ response });
@@ -61,18 +67,15 @@ const PanelPage: React.FC = () => {
         err instanceof Error
           ? err.message
           : "An error occurred while generating the panels";
-      setError(errorMessage);
+      generateImageError(0, errorMessage);
       toast({
         variant: "destructive",
         title: "Error",
         description: errorMessage,
       });
-    } finally {
-      setIsLoading(false);
     }
-  }, [getOpenAIService, storyContent, toast]);
+  }, [getOpenAIService, storyContent, toast, setPanels, generateImageError]);
 
-  // Initialize panels when the component mounts
   useEffect(() => {
     if (!storyContent) {
       navigate("/");
@@ -87,11 +90,10 @@ const PanelPage: React.FC = () => {
   };
 
   const handleGenerateAllImages = () => {
-    panels.map((_panel, index) => handleGenerateImage(index));
+    panels.forEach((_, index) => handleGenerateImage(index));
   };
 
   const handleGenerateImage = async (panelIndex: number) => {
-    // const imageGenerationService = getOpenAIService();
     const imageGenerationService = getLeonardoService();
     if (!imageGenerationService) return;
     const panel = panels[panelIndex];
@@ -101,11 +103,7 @@ const PanelPage: React.FC = () => {
       .map((name) => `${name}: ${characters[name]}`)
       .join("\n");
 
-    setPanels((prevPanels) =>
-      prevPanels.map((panel, idx) =>
-        idx === panelIndex ? { ...panel, isGenerating: true } : panel
-      )
-    );
+    generateImageStart(panelIndex);
 
     try {
       const promptWithCharacters = charactersInScene + "\n" + panel.imagePrompt;
@@ -116,13 +114,7 @@ const PanelPage: React.FC = () => {
           panel.panelShape
         );
 
-      setPanels((prevPanels) =>
-        prevPanels.map((panel, idx) =>
-          idx === panelIndex
-            ? { ...panel, imageUrl, imageBase64, isGenerating: false }
-            : panel
-        )
-      );
+      generateImageSuccess(panelIndex, imageUrl!, imageBase64);
 
       toast({
         title: "Image Generated",
@@ -131,10 +123,9 @@ const PanelPage: React.FC = () => {
         } image has been generated successfully.`,
       });
     } catch (error) {
-      setPanels((prevPanels) =>
-        prevPanels.map((panel, idx) =>
-          idx === panelIndex ? { ...panel, isGenerating: false } : panel
-        )
+      generateImageError(
+        panelIndex,
+        error instanceof Error ? error.message : "Failed to generate image"
       );
 
       toast({
@@ -202,7 +193,7 @@ const PanelPage: React.FC = () => {
 
           {allPanelsHaveImages() && (
             <Button asChild className="gap-2">
-              <Link to="/comic" state={{ panels }}>
+              <Link to="/comic">
                 <BookOpen className="h-4 w-4" />
                 Generate Comic
               </Link>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, Navigate, Link } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,6 +14,7 @@ import { exportToPDF } from "@/utils/pdfExport";
 import { toast } from "@/hooks/useToast";
 import { ComicPreview } from "./preview/ComicPreview";
 import { ComicPanel, LayoutTemplate, PageData } from "./types";
+import { useComicPanels } from "@/context/ComicPanelContext";
 
 interface LayoutPreviewProps {
   layout: LayoutTemplate;
@@ -175,9 +176,9 @@ const PageThumbnail: React.FC<{
 );
 
 const ComicPage: React.FC = () => {
-  const location = useLocation();
-  const initialPanels = location.state?.panels as ComicPanel[] | undefined;
-  const [panels, setPanels] = useState<ComicPanel[]>(initialPanels || []);
+  const {
+    state: { panels },
+  } = useComicPanels();
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<PageData[]>([]);
   const [isExporting, setIsExporting] = useState(false);
@@ -187,12 +188,13 @@ const ComicPage: React.FC = () => {
 
   useEffect(() => {
     // Initialize with first page if none exist
-    if (pages.length === 0 && panels) {
+    if (pages.length === 0 && panels.length > 0) {
       setPages([{ layout: layoutTemplates[0], startIndex: 0 }]);
     }
-  }, [panels, pages.length]);
+  }, [panels.length, pages.length]);
 
-  if (!panels || !Array.isArray(panels) || panels.length === 0) {
+  // Guard against no panels
+  if (!panels || panels.length === 0) {
     return <Navigate to="/panels" replace />;
   }
 
@@ -239,28 +241,6 @@ const ComicPage: React.FC = () => {
         newPages[i - 1].startIndex + newPages[i - 1].layout.panels.length;
     }
     setPages(newPages);
-  };
-
-  const handleUpdatePanel = (
-    panelIndex: number,
-    updates: Partial<ComicPanel>
-  ) => {
-    console.log("Updating", { panelIndex, updates });
-    setPanels((currentPanels) => {
-      const newPanels = [...currentPanels];
-      newPanels[panelIndex] = {
-        ...newPanels[panelIndex],
-        ...updates,
-      };
-      return newPanels;
-    });
-
-    // Show a toast notification to confirm the update
-    toast({
-      title: "Panel Updated",
-      description: "Panel crop settings have been saved.",
-      duration: 2000,
-    });
   };
 
   const handleExport = async () => {
@@ -394,7 +374,6 @@ const ComicPage: React.FC = () => {
                   startIndex={pages[currentPage].startIndex}
                   pageIndex={currentPage}
                   orientation={orientation}
-                  onUpdatePanel={handleUpdatePanel}
                 />
               )}
             </CardContent>
